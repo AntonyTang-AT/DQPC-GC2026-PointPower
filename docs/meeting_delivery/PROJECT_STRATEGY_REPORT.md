@@ -35,7 +35,7 @@ UVG GC2026 **赛道一（UVG-CWI-DQPC）** 的 **Enhancement Only** 轨道要求
 | **任务匹配** | SuperPC 是公开的点云 **上采样 / 生成** 模型，天然面向「从稀疏/噪声点云恢复更完整几何」 |
 | **零训练成本** | 提供 Model Zoo（`kitti360_com.pth` 等），**无需在 UVG 上 fine-tune** 即可跑通 |
 | **工程成熟** | 上游仓库完整、社区有先例；适合快速搭 Enhancement Only 全量管线（2155 帧） |
-| **早期 gate 有效** | 在内部 val362 子集上，用 `evaluate_uvg` 的 **cd_l1**（~48–75 mm 量级）做网格搜索：`kitti360` + `blend_cg` + voxel 3 mm 相对 CG **改善约 +11 mm**（`docs/meeting_delivery/gate_snapshots/superpc_gate_decision.json`（运行时见 `output/val_grid/gate_decision.json`）） |
+| **早期 gate 有效** | 在内部 val362 子集上，用 `evaluate_uvg` 的 **cd_l1**（~48–75 mm 量级）做网格搜索：`kitti360` + `blend_cg` + voxel 3 mm 相对 CG **改善约 +11 mm**（见 `docs/meeting_delivery/gate_snapshots/superpc_gate_decision.json`；运行时 `output/val_grid/gate_decision.json`） |
 | **与 Full Pipeline 统一** | 同一 SuperPC 模块可接在 RGBD→Stage1 之后，便于双线研发 |
 
 因此，**SuperPC 不是随意选型**，而是「增强任务 + 免训练 + 快速全量」下的 **理性首发方案**。
@@ -140,7 +140,7 @@ UVG GC2026 **赛道一（UVG-CWI-DQPC）** 的 **Enhancement Only** 轨道要求
     → ENH PLY
 ```
 
-核心文件：`run_pdlts_infer.py`、`enh_refine_pipeline.py`；gate：`docs/meeting_delivery/gate_snapshots/pdlts_gate_decision.json`（运行时见 `output/enh_refine_p0_p1_p2/gate_decision.json`）。
+核心文件：`scripts/run_pdlts_infer.py`、`scripts/enh_refine_pipeline.py`；gate 快照：`docs/meeting_delivery/gate_snapshots/pdlts_gate_decision.json`（运行时 `output/enh_refine_p0_p1_p2/gate_decision.json`）。
 
 ### 3.4 尝试与结果（官方 val565）
 

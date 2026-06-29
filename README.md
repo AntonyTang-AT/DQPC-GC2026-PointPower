@@ -14,7 +14,8 @@ UVG Grand Challenge 2026 — **赛道一（UVG-CWI-DQPC）**
 | 最优 SuperPC 配置 | `kitti360_com.pth` + `blend_cg` + voxel 3.0mm + per-seq recon-enh config |
 | 比赛源码包 | [`submissions/GC2026_Team/`](submissions/GC2026_Team/) |
 
-**N0 v2 详细结果**：[`docs/N0_V2_RESULTS.md`](docs/N0_V2_RESULTS.md)  
+**学长汇报入口**：[`docs/meeting_delivery/README.md`](docs/meeting_delivery/README.md)（总思路报告 + val565 Excel + 提交包说明）
+
 **CWIPC-Native 管线说明**：[`docs/CWIPC_NATIVE_PIPELINE.md`](docs/CWIPC_NATIVE_PIPELINE.md)  
 **Agent 接手**：[`AGENTS.md`](AGENTS.md) → `bash scripts/check_integrity.sh`
 

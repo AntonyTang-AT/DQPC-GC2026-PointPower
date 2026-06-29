@@ -19,6 +19,9 @@ output/
 # Submission tarballs at repo root
 submissions/*.tar.gz
 
+# Generated after full 2155 infer (huge frame list; use make_submission.py)
+submissions/GC2026_Team_EnhancementOnly/manifest.json
+
 # Python / env
 __pycache__/
 *.py[cod]

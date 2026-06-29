@@ -1,0 +1,5 @@
+granularity,sequence,chamfer_distance,cg_chamfer_distance,improvement_cg_minus_enh,num_frames,note
+per_sequence_mean,TrumanShow,20.1850000531591,19.337026652126596,-0.8479734010325046,,Phase2 superpc_filter_cg + snap1mm; per-frame CSV deleted
+per_sequence_mean,VictoryHeart,16.870683523245752,16.21444461069477,-0.6562389125509824,,Phase2 superpc_filter_cg + snap1mm; per-frame CSV deleted
+per_sequence_mean,VirtualLife,18.244000495776408,17.337749414912352,-0.906251080864056,,Phase2 superpc_filter_cg + snap1mm; per-frame CSV deleted
+val565_aggregate,ALL,18.3528080857124,17.551553246708043,-0.8012548390043577,564,Same aggregate as filter_cg+snap1 (geometry cache deleted)

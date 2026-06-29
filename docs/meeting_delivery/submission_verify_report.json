@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "package": "submissions/GC2026_Team_EnhancementOnly",
+  "smoke_frames": 2,
+  "log": "output/meeting_delivery/submission_verify.log"
+}

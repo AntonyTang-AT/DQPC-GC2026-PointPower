@@ -1,0 +1,23 @@
+{
+  "experiment": "superpc_filter_snap1.0",
+  "description": "SuperPC filter_cg geometry cache (kitti360_com_filter_cg_v0_vx0) + Enh Refine snap_mm=1.0",
+  "eval_mode": "gc_baseline_aligned",
+  "pairs_file": "data/processed/val_pairs_official_cgv2.txt",
+  "num_frames_val565": 564,
+  "cg_baseline_chamfer_distance": 17.551553246708043,
+  "mean_enh_chamfer_distance": 18.3528080857124,
+  "improvement_cg_minus_enh": -0.8012548390043577,
+  "note_same_as_filter_cg": true,
+  "phase": "enh_refine_phase2",
+  "run_date": "2026-06-27",
+  "source_files": [
+    "output/enh_refine_phase2/summary_val565.json",
+    "output/enh_refine_phase2/_summary_lines.jsonl",
+    "output/enh_refine_phase2/gate_decision.json",
+    "output/enh_refine_phase2/phase2b.log",
+    "output/enh_refine_phase2/phase2_resume.log"
+  ],
+  "ply_and_per_frame_csv_status": "deleted_from_disk",
+  "latest_model_uses_this": false,
+  "latest_model_lineage": "Phase2C PD-LTS -> density_adaptive -> vh_snap0 (17.440 mm); val565_selection did not re-run superpc_filter presets"
+}

@@ -7,7 +7,9 @@
 | [`INTEGRITY.md`](INTEGRITY.md) | 迁移 / 验收 | 完整性检查项说明与手动命令 |
 | [`MIGRATION.md`](MIGRATION.md) | 运维 | 新服务器 rsync、bootstrap、验收标准 |
 | [`CWIPC_NATIVE_PIPELINE.md`](CWIPC_NATIVE_PIPELINE.md) | Stage1 | cwipc-native、variants、gate |
-| [`N0_V2_RESULTS.md`](N0_V2_RESULTS.md) | 结果 | **N0 v2 全量 vs B1 指标摘要** |
+| [`meeting_delivery/README.md`](meeting_delivery/README.md) | **学长汇报** | **总思路报告 + Excel + 指标 CSV + 提交说明（推荐入口）** |
+| [`meeting_delivery/PROJECT_STRATEGY_REPORT.md`](meeting_delivery/PROJECT_STRATEGY_REPORT.md) | **汇报 / 答辩** | 选型、成败、框架、表格含义、待填项 |
+| [`N0_V2_RESULTS.md`](N0_V2_RESULTS.md) | 结果 | N0 v2 全量指标摘要 |
 | [`../README.md`](../README.md) | 人类 | 仓库总览与复现命令 |
 
 **一键检查**：`bash scripts/check_integrity.sh`  

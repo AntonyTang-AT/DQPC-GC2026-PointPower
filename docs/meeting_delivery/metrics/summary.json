@@ -1,0 +1,50 @@
+{
+  "models": [
+    {
+      "name": "superpc_blend_cg",
+      "csv": "docs/meeting_delivery/metrics/01_superpc_blend_cg_kitti360_vx3.0_val565.csv",
+      "num_frames": 564,
+      "mean_chamfer_distance": 20.579368230327326,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 22.326201056813023,
+        "VictoryHeart": 16.08890799403713,
+        "VirtualLife": 23.5687164610422
+      }
+    },
+    {
+      "name": "pdlts_vh_snap0",
+      "csv": "docs/meeting_delivery/metrics/02_pdlts_vh_snap0_val565.csv",
+      "num_frames": 564,
+      "mean_chamfer_distance": 17.439915302705465,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 19.268189383143714,
+        "VictoryHeart": 16.024258624384654,
+        "VirtualLife": 17.26771886328842
+      }
+    },
+    {
+      "name": "pdlts_density_no_vh_tune",
+      "csv": "docs/meeting_delivery/metrics/03_pdlts_density_global_snap_no_vh_tune_val565.csv",
+      "num_frames": 564,
+      "mean_chamfer_distance": 17.50391089087027,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 19.268189383143714,
+        "VictoryHeart": 16.20747441994277,
+        "VirtualLife": 17.26771886328842
+      }
+    },
+    {
+      "name": "pdlts_raw",
+      "csv": "docs/meeting_delivery/metrics/04_pdlts_raw_val565.csv",
+      "num_frames": 564,
+      "mean_chamfer_distance": 17.854433754845655,
+      "per_sequence_mean_chamfer": {}
+    }
+  ],
+  "cg_baseline_csv": "ACMMM26_GC_baseline.csv",
+  "val_sequences": [
+    "TrumanShow",
+    "VictoryHeart",
+    "VirtualLife"
+  ]
+}

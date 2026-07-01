@@ -8,7 +8,10 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
-from run_superpc_infer import output_ply_path  # noqa: E402
+try:
+    from run_pdlts_infer import output_ply_path  # noqa: E402
+except ImportError:
+    from run_superpc_infer import output_ply_path  # noqa: E402
 
 
 def main() -> None:

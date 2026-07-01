@@ -1,0 +1,117 @@
+{
+  "default": {
+    "output_mode": "blend_cg",
+    "blend_voxel_mm": 3.0,
+    "use_vision": 0,
+    "checkpoint": "kitti360_com.pth",
+    "source_experiment": "kitti360_com_blend_cg_v0_vx3.0"
+  },
+  "sequences": {
+    "TicTacToe": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_val": 21.79940458355528,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0"
+    },
+    "VictoryHeart": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 1.0,
+      "use_vision": 0,
+      "checkpoint": "shapenet_com.pth",
+      "mean_delta_cd_l1_val": 8.14188232034596,
+      "source_experiment": "shapenet_com_blend_cg_v0_vx1.0"
+    },
+    "BlueSpeech": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": 6.6120170411609465,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0"
+    },
+    "BlueVolley": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -2.2892281270166586,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "BouncingBlue": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -5.044208441570306,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "FitFluencer": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -7.650507305391986,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "GoodVision": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -4.426698102208668,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "Mannequin": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -4.837342292704481,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "OrangeKettlebell": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -1.7260173348819507,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "PinkNoir": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -11.512420198810634,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    },
+    "TrumanShow": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": 4.07540864554065,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0"
+    },
+    "VirtualLife": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 3.0,
+      "use_vision": 0,
+      "checkpoint": "kitti360_com.pth",
+      "mean_delta_cd_l1_full": -4.013020505710524,
+      "source_experiment": "kitti360_com_blend_cg_v0_vx3.0",
+      "full_negative_note": "keep_val_tuned_blend_cg"
+    }
+  },
+  "grid_root": "/root/autodl-tmp/GC2026/output/val_grid",
+  "num_experiments": 12
+}

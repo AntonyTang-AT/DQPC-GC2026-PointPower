@@ -36,6 +36,25 @@ from enh_refine_pipeline import (
     process_cg_frame,
     sequence_from_cg_path,
 )  # noqa: E402
+from enh_temporal_attention import build_enh_history_by_cg
+from enh_temporal_region import (  # noqa: E402
+    build_sequence_frame_index,
+    neighbor_cg_paths_for_frame,
+    neighbor_frames_for_frame,
+)
+
+
+def needs_temporal_neighbors(cfg: RefineConfig) -> bool:
+    extra = cfg.extra or {}
+    return extra.get("hybrid_fill_role") in (
+        "temporal_region_mask",
+        "temporal_attn_region_mask",
+    )
+
+
+def temporal_half_window_for(cfg: RefineConfig) -> int:
+    tw = int(cfg.temporal_window or (cfg.extra or {}).get("temporal_window", 5))
+    return max(1, tw // 2)
 
 
 def load_pdlts_denoise(model: str, device: str):
@@ -92,9 +111,12 @@ def load_config(args) -> RefineConfig:
             if cfg.geometry != "hybrid_pdlts_superpc":
                 cfg.geometry = "from_dir"
     if cfg.geometry == "hybrid_pdlts_superpc":
-        sec_dir, _ = pick_secondary_geometry_dir(cfg, "", GC2026_ROOT)
-        if sec_dir:
-            cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": sec_dir}
+        if args.geometry_secondary_dir:
+            cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": args.geometry_secondary_dir}
+        else:
+            sec_dir, _ = pick_secondary_geometry_dir(cfg, "", GC2026_ROOT)
+            if sec_dir:
+                cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": sec_dir}
     return cfg
 
 
@@ -112,10 +134,13 @@ def apply_geometry_cache_cfg(frame_cfg: RefineConfig, args) -> RefineConfig:
         if gdir:
             out.geometry_dir = gdir
         if out.geometry == "hybrid_pdlts_superpc":
-            sec_dir, sec_label = pick_secondary_geometry_dir(out, "", GC2026_ROOT)
-            if sec_dir:
-                out.extra = {**(out.extra or {}), "geometry_secondary_dir": sec_dir}
-                out.extra["geometry_secondary_resolved"] = sec_label
+            if args.geometry_secondary_dir:
+                out.extra = {**(out.extra or {}), "geometry_secondary_dir": args.geometry_secondary_dir}
+            else:
+                sec_dir, sec_label = pick_secondary_geometry_dir(out, "", GC2026_ROOT)
+                if sec_dir:
+                    out.extra = {**(out.extra or {}), "geometry_secondary_dir": sec_dir}
+                    out.extra["geometry_secondary_resolved"] = sec_label
             out.geometry = "hybrid_pdlts_superpc"
         elif frame_cfg.geometry in ("pdlts_light", "pdlts_heavy"):
             out.geometry = "from_dir"
@@ -145,6 +170,11 @@ def parse_args():
         help="Cached PD-LTS / geometry root (Seq/ENH.ply layout)",
     )
     p.add_argument(
+        "--geometry-secondary-dir",
+        default="",
+        help="Hybrid preset: SuperPC secondary cache (overrides geometry_secondary source)",
+    )
+    p.add_argument(
         "--use-geometry-cache",
         action="store_true",
         help="With --geometry-dir: skip live PD-LTS, read cached geometry",
@@ -170,6 +200,11 @@ def parse_args():
         "--per-seq-config",
         default="",
         help="JSON with sequences.{name} -> RefineConfig overrides",
+    )
+    p.add_argument(
+        "--enh-history-dir",
+        default="",
+        help="Prior refine ENH cache for temporal-attention mask (Seq/ENH.ply layout)",
     )
     p.add_argument(
         "--frame-proxy-json",
@@ -208,6 +243,22 @@ def main():
     if args.max_samples > 0:
         cg_paths = cg_paths[: args.max_samples]
 
+    sequence_index: dict = {}
+    temporal_half_window = 0
+    enh_by_cg: dict = {}
+    if needs_temporal_neighbors(cfg):
+        sequence_index = build_sequence_frame_index(cg_paths)
+        temporal_half_window = temporal_half_window_for(cfg)
+        if args.enh_history_dir:
+            enh_by_cg = build_enh_history_by_cg(args.enh_history_dir, cg_paths)
+            print(
+                f"[refine] enh history: {len(enh_by_cg)} frames from {args.enh_history_dir}"
+            )
+        print(
+            f"[refine] temporal index: {len(sequence_index)} sequences, "
+            f"half_window={temporal_half_window}"
+        )
+
     denoise_fn = None
     needs_pdlts = cfg.geometry in ("pdlts_light", "pdlts_heavy")
     use_cache = (
@@ -241,10 +292,14 @@ def main():
         elif args.require_geometry_cache:
             raise SystemExit(f"No geometry cache for preset {cfg.name}")
         if cfg.geometry == "hybrid_pdlts_superpc":
-            sec_dir, sec_label = pick_secondary_geometry_dir(cfg, "", GC2026_ROOT)
-            if sec_dir:
-                cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": sec_dir}
-                print(f"[refine] hybrid secondary={sec_label} dir={sec_dir}")
+            if args.geometry_secondary_dir:
+                cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": args.geometry_secondary_dir}
+                print(f"[refine] hybrid secondary=cli dir={args.geometry_secondary_dir}")
+            else:
+                sec_dir, sec_label = pick_secondary_geometry_dir(cfg, "", GC2026_ROOT)
+                if sec_dir:
+                    cfg.extra = {**(cfg.extra or {}), "geometry_secondary_dir": sec_dir}
+                    print(f"[refine] hybrid secondary={sec_label} dir={sec_dir}")
 
     records = []
     skipped = 0
@@ -283,6 +338,18 @@ def main():
         frame_cfg = apply_geometry_cache_cfg(frame_cfg, args)
         t0 = time.perf_counter()
         gdir, _ = pick_geometry_dir(frame_cfg, args.geometry_dir, GC2026_ROOT)
+        neighbor_paths: Optional[list] = None
+        neighbor_frames = None
+        if needs_temporal_neighbors(frame_cfg) and sequence_index:
+            fill_role = (frame_cfg.extra or {}).get("hybrid_fill_role", "")
+            if fill_role == "temporal_attn_region_mask":
+                neighbor_frames = neighbor_frames_for_frame(
+                    cg_path, sequence_index, temporal_half_window, enh_by_cg=enh_by_cg,
+                )
+            else:
+                neighbor_paths = neighbor_cg_paths_for_frame(
+                    cg_path, sequence_index, temporal_half_window,
+                )
         try:
             if frame_proxy:
                 cg_xyz, cg_rgb = read_ply_xyz_rgb(cg_path)
@@ -296,6 +363,8 @@ def main():
                 denoise_fn=denoise_fn,
                 geometry_dir=gdir or args.geometry_dir or frame_cfg.geometry_dir,
                 geometry_fallback=args.geometry_fallback,
+                neighbor_cg_paths=neighbor_paths,
+                neighbor_frames=neighbor_frames,
             )
             meta["seconds"] = round(time.perf_counter() - t0, 3)
             records.append(meta)

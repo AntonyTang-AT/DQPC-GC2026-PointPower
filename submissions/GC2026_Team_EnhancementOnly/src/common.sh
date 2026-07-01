@@ -15,12 +15,14 @@ if [[ -z "${GC2026_ROOT:-}" ]]; then
 fi
 export GC2026_ROOT SUBMISSION_ROOT SRC_DIR
 export PDLTS_ROOT="${PDLTS_ROOT:-${GC2026_ROOT}/code/PD-LTS}"
+export SUPERPC_ROOT="${SUPERPC_ROOT:-${GC2026_ROOT}/code/SuperPC}"
 export SCRIPT_DIR="${SRC_DIR}"
 export PY="${PY:-python3}"
+export PDLTS_FINETUNE_CKPT="${PDLTS_FINETUNE_CKPT:-${SUBMISSION_ROOT}/models/DenoiseFlow-light-UVG-finetune.ckpt}"
+export SUPERPC_CKPT="${SUPERPC_CKPT:-${GC2026_ROOT}/models/superpc_pretrained/kitti360_com.pth}"
 
 if [[ -f "${SRC_DIR}/env_setup.sh" ]] && [[ "${SUBMISSION_SKIP_CONDA:-0}" != "1" ]]; then
   if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
-    # shellcheck source=/dev/null
     source "${HOME}/miniconda3/etc/profile.d/conda.sh"
     conda activate superpc 2>/dev/null || true
     export PATH="${CONDA_PREFIX:-}/bin:${PATH}"

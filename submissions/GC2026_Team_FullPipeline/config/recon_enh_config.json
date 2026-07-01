@@ -1,0 +1,25 @@
+{
+  "default": {
+    "output_mode": "blend_cg",
+    "blend_voxel_mm": 3.0,
+    "use_vision": 0,
+    "checkpoint": "kitti360_com.pth",
+    "source_experiment": "kitti360_com_blend_cg_v0_vx3.0"
+  },
+  "sequences": {
+    "VictoryHeart": {
+      "output_mode": "blend_cg",
+      "blend_voxel_mm": 1.0,
+      "use_vision": 0,
+      "checkpoint": "shapenet_com.pth",
+      "source_experiment": "shapenet_com_blend_cg_v0_vx1.0"
+    }
+  },
+  "forbid_modes": ["model"],
+  "passthrough_recon_cd_mm": 200.0,
+  "compare_json": "/root/autodl-tmp/GC2026/output/cg_recon_eval/val_compare_cgv2.json",
+  "thresholds": {
+    "high_mm": 40.0,
+    "low_mm": 15.0
+  }
+}

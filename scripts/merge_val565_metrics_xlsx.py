@@ -24,7 +24,13 @@ SHEET_CSVS = [
     ("sheet5_pdlts_density", f"{DELIVERY_REL}/metrics/03_pdlts_density_global_snap_no_vh_tune_val565.csv"),
     ("sheet6_pdlts_raw", f"{DELIVERY_REL}/metrics/04_pdlts_raw_val565.csv"),
     ("sheet7_superpc_filter_snap1", f"{DELIVERY_REL}/metrics/05_superpc_filter_snap1.0_val565.csv"),
+    ("sheet8_ft_density_finetune", f"{DELIVERY_REL}/metrics/06b_ft_density_finetune_val565.csv"),
+    ("sheet9_holefill_lite", f"{DELIVERY_REL}/metrics/06_holefill_lite_val565.csv"),
+    ("sheet10_line_b_holefill", f"{DELIVERY_REL}/metrics/07_line_b_holefill_first_val565.csv"),
+    ("sheet11_frame_gate_v2", f"{DELIVERY_REL}/metrics/08_frame_gate_v2_val565.csv"),
 ]
+
+OPTIONAL_SHEETS = {s[0]: s[1] for s in SHEET_CSVS[5:]}
 
 
 def read_csv(path: str) -> pd.DataFrame:
@@ -161,10 +167,14 @@ def main() -> None:
         for sheet_name, rel_path in SHEET_CSVS:
             path = os.path.join(GC2026_ROOT, rel_path)
             if not os.path.isfile(path):
+                if sheet_name in OPTIONAL_SHEETS:
+                    continue
                 raise FileNotFoundError(path)
             read_csv(path).to_excel(writer, sheet_name=sheet_name, index=False)
 
-    sheet_names = ["sheet1_summary", "sheet1_meta", "sheet2_cg_baseline"] + [s[0] for s in SHEET_CSVS]
+    sheet_names = ["sheet1_summary", "sheet1_meta", "sheet2_cg_baseline"] + [
+        s[0] for s in SHEET_CSVS if os.path.isfile(os.path.join(GC2026_ROOT, s[1]))
+    ]
     print(json.dumps({"out_xlsx": args.out_xlsx, "sheets": sheet_names}, indent=2))
 
 

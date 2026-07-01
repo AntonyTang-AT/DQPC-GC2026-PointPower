@@ -41,7 +41,13 @@ cp "${GC2026_ROOT}/scripts/wait_rgbd_and_val.sh" "$SRC_DIR/"
 cp "${GC2026_ROOT}/scripts/run_full_pipeline_chain.sh" "$SRC_DIR/"
 cp "${GC2026_ROOT}/scripts/run_full_pipeline_after_val.sh" "$SRC_DIR/"
 cp "${GC2026_ROOT}/scripts/post_submission_candidate.sh" "$SRC_DIR/"
-cp "${GC2026_ROOT}/scripts/run_full_pipeline_val.sh" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/run_full_n0_v2.sh" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/run_stage1_backfill_fix.sh" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/apply_official_cg_fallback.py" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/copy_enh_from_submission.py" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/run_official_val_smoke.sh" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/run_stage1_p0_audit.py" "$SRC_DIR/"
+cp "${GC2026_ROOT}/scripts/refresh_compliance_summary.py" "$SRC_DIR/"
 
 cat > "${SRC_DIR}/run_enhancement_only.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -57,8 +63,9 @@ cat > "${SRC_DIR}/run_full_pipeline.sh" <<'EOF'
 # Full Pipeline: RGBD/bag -> reconstructed CG -> SuperPC -> ENH
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-export OUT_DIR="${OUT_DIR:-$ROOT/output/full_pipeline_candidate}"
-bash "$ROOT/scripts/run_full_pipeline.sh"
+export OUT_DIR="${OUT_DIR:-$ROOT/output/full_pipeline_n0_v2_candidate}"
+export RECON_ROOT="${RECON_ROOT:-$ROOT/output/full_pipeline_n0_v2_cg}"
+bash "$ROOT/scripts/run_full_n0_v2.sh"
 EOF
 
 chmod +x "${SRC_DIR}/run_enhancement_only.sh" "${SRC_DIR}/run_full_pipeline.sh"
@@ -84,7 +91,7 @@ We participate in **both** official Processing Tracks on the same challenge.
 
 | Track | Input | Script | Output dir |
 |-------|-------|--------|------------|
-| **Full Pipeline** (primary) | Intel RealSense RGBD / .bag files | \`bash src/run_full_pipeline.sh\` | \`output/full_pipeline_candidate/\` |
+| **Full Pipeline** (primary) | Intel RealSense RGBD / .bag files | \`bash src/run_full_pipeline.sh\` | \`output/full_pipeline_n0_v2_candidate/\` |
 | Enhancement Only | Official CG PLY | \`bash src/run_enhancement_only.sh\` | \`output/submission_candidate/\` |
 
 | Field | Value |
@@ -139,7 +146,10 @@ accelerate
 Pillow
 EOF
 
-FULL_MANIFEST="${GC2026_ROOT}/output/full_pipeline_candidate/manifest.json"
+FULL_MANIFEST="${GC2026_ROOT}/output/full_pipeline_n0_v2_candidate/manifest.json"
+if [[ ! -f "$FULL_MANIFEST" ]]; then
+  FULL_MANIFEST="${GC2026_ROOT}/output/full_pipeline_candidate/manifest.json"
+fi
 ENH_MANIFEST="${GC2026_ROOT}/output/submission_candidate/manifest.json"
 if [[ -f "$FULL_MANIFEST" ]]; then
   cp "$FULL_MANIFEST" "${TEAM_DIR}/manifest_full_pipeline.json"

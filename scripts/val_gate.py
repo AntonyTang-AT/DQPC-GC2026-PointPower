@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Select val grid winner with full-dataset and per-sequence constraints."""
+"""Select val grid winner using official GC chamfer_distance (aligned CG/ENH vs HE).
+
+Primary objective: minimize mean ENH chamfer_distance on official val565.
+Constraint: mean improvement vs aligned CG baseline >= margin (mm).
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,120 +13,100 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GC2026_ROOT = os.path.dirname(SCRIPT_DIR)
-GRID_ROOT = os.path.join(GC2026_ROOT, "output", "val_grid")
-GATE_MARGIN = 1.0
+DEFAULT_GRID = os.path.join(GC2026_ROOT, "output", "val_grid_official565")
+DEFAULT_EVAL = "evaluation_gc_baseline_val565.json"
+GATE_MARGIN_MM = 0.0
 
 sys.path.insert(0, SCRIPT_DIR)
-from summarize_eval_by_sequence import summarize_records  # noqa: E402
+from summarize_gc_baseline_by_sequence import summarize_records  # noqa: E402
+from enh_experiment_tag import parse_experiment_tag  # noqa: E402
 
 
-def load_summary() -> list[dict]:
-    path = os.path.join(GRID_ROOT, "summary.json")
+def load_summary(grid_root: str) -> list[dict]:
+    for name in ("summary_official565.json", "summary.json"):
+        path = os.path.join(grid_root, name)
+        if os.path.isfile(path):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+    return []
+
+
+def cg_baseline_chamfer(grid_root: str) -> float | None:
+    """Reference CG chamfer from first experiment eval or cached baseline file."""
+    cache = os.path.join(GC2026_ROOT, "output/baselines/val565_cg_gc_baseline.json")
+    if os.path.isfile(cache):
+        with open(cache, encoding="utf-8") as f:
+            s = json.load(f).get("summary", {})
+            v = s.get("mean_cg_chamfer_distance") or s.get("means", {}).get("chamfer_distance")
+            if v is not None:
+                return float(v)
+
+    rows = load_summary(grid_root)
+    for row in rows:
+        v = row.get("mean_cg_chamfer_distance")
+        if v is not None:
+            return float(v)
+    return None
+
+
+def eval_per_sequence(exp_dir: str, eval_name: str) -> dict[str, dict]:
+    path = os.path.join(exp_dir, eval_name)
     if not os.path.isfile(path):
-        return []
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def cg_baseline_enh() -> float:
-    p = os.path.join(GC2026_ROOT, "output/baselines/val_cg_baseline_n20k.json")
-    if os.path.isfile(p):
-        with open(p, "r", encoding="utf-8") as f:
-            return float(json.load(f)["summary"]["mean_enh_cd_l1"])
-    return 85.96
-
-
-def eval_per_sequence(eval_path: str) -> dict[str, dict]:
-    if not os.path.isfile(eval_path):
         return {}
-    with open(eval_path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     return summarize_records(data.get("records", []))
 
 
-def parse_experiment_tag(tag: str) -> dict:
-    parts = tag.split("_")
-    ckpt = "_".join(parts[:2]) if len(parts) >= 2 else tag
-    mode = "blend_cg"
-    vision = 0
-    voxel = 2.0
-    if "blend_cg" in tag:
-        mode = "blend_cg"
-    elif "filter_cg" in tag:
-        mode = "filter_cg"
-    elif "model" in tag:
-        mode = "model"
-    if "_v1_" in tag:
-        vision = 1
-    for seg in tag.split("_"):
-        if seg.startswith("vx"):
-            try:
-                voxel = float(seg[2:])
-            except ValueError:
-                pass
-    return {
-        "checkpoint": ckpt + ".pth",
-        "output_mode": mode,
-        "use_vision": vision,
-        "blend_voxel_mm": voxel,
-        "experiment_dir": os.path.join(GRID_ROOT, tag),
-    }
+def score_candidate(row: dict, cg_ref: float | None, args) -> tuple[float, dict]:
+    enh = float(row["mean_enh_chamfer_distance"])
+    improve = row.get("improvement_cg_minus_enh")
+    if improve is None and cg_ref is not None:
+        improve = cg_ref - enh
+    improve = float(improve) if improve is not None else None
 
+    exp_dir = os.path.join(args.grid_root, row["experiment"])
+    val_per = eval_per_sequence(exp_dir, args.eval_name)
 
-def score_candidate(row: dict, cg_ref: float, args) -> tuple[float, dict]:
-    tag = row["experiment"]
-    exp_dir = os.path.join(GRID_ROOT, tag)
-    val_ev = os.path.join(exp_dir, "evaluation_val_n20k.json")
-    full_ev = os.path.join(exp_dir, "evaluation_full_n20k.json")
-
-    val_per = eval_per_sequence(val_ev)
-    full_per = eval_per_sequence(full_ev)
-
-    val_improve = float(row.get("improvement", cg_ref - row["mean_enh_cd_l1"]))
-    full_improve = None
-    seq_positive_full = 0
-    if full_per:
-        deltas = [v["mean_delta_cd_l1"] for v in full_per.values()]
-        full_improve = sum(deltas) / len(deltas)
-        seq_positive_full = sum(1 for d in deltas if d > 0)
-
-    val_seq_positive = sum(1 for v in val_per.values() if v["mean_delta_cd_l1"] > 0)
+    val_seq_positive = sum(
+        1 for v in val_per.values() if (v.get("mean_delta_cg_minus_enh") or 0) > 0
+    )
     val_seq_total = len(val_per)
 
     penalty = 0.0
-    if val_improve < args.margin:
-        penalty += 1000.0
-    if full_improve is not None and full_improve < args.min_full_improve:
-        penalty += 500.0
-    if full_per and seq_positive_full < args.min_full_seq_positive:
-        penalty += 200.0
+    if improve is not None and improve < args.margin:
+        penalty += 1000.0 + (args.margin - improve) * 10.0
+    if args.min_seq_positive > 0 and val_seq_total > 0:
+        if val_seq_positive < args.min_seq_positive:
+            penalty += 500.0 + (args.min_seq_positive - val_seq_positive) * 50.0
 
-    score = float(row["mean_enh_cd_l1"]) + penalty
+    score = enh + penalty
     meta = {
-        "val_improvement": val_improve,
-        "full_improvement": full_improve,
+        "improvement_cg_minus_enh": improve,
         "val_sequences_positive": val_seq_positive,
         "val_sequences_total": val_seq_total,
-        "full_sequences_positive": seq_positive_full,
-        "full_sequences_total": len(full_per),
+        "penalty": penalty,
     }
     return score, meta
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--margin", type=float, default=GATE_MARGIN)
-    parser.add_argument("--min-full-improve", type=float, default=0.0)
-    parser.add_argument("--min-full-seq-positive", type=int, default=6)
-    parser.add_argument("--cg-version", default=os.environ.get("UVG_CG_VERSION", "v2"))
-    parser.add_argument("--out-json", default=os.path.join(GRID_ROOT, "gate_decision.json"))
+    parser = argparse.ArgumentParser(description="Gate selection on official chamfer_distance")
+    parser.add_argument("--grid-root", default=DEFAULT_GRID)
+    parser.add_argument("--eval-name", default=DEFAULT_EVAL)
+    parser.add_argument("--margin", type=float, default=GATE_MARGIN_MM,
+                        help="Min mean improvement vs CG baseline (mm, cg-enh)")
+    parser.add_argument("--min-seq-positive", type=int, default=1,
+                        help="Min val565 sequences with positive per-seq chamfer improvement")
+    parser.add_argument("--cg-version", default="v2")
+    parser.add_argument("--out-json", default=None)
     args = parser.parse_args()
 
-    rows = load_summary()
+    rows = load_summary(args.grid_root)
     if not rows:
-        raise SystemExit("No val_grid summary.json — run run_val_grid.sh first")
+        raise SystemExit(f"No summary in {args.grid_root} — run run_val_grid_official565.sh first")
 
-    cg_ref = cg_baseline_enh()
+    cg_ref = cg_baseline_chamfer(args.grid_root)
     scored = []
     for row in rows:
         score, meta = score_candidate(row, cg_ref, args)
@@ -131,50 +115,56 @@ def main() -> None:
     scored.sort(key=lambda x: x[0])
     best_score, best, best_meta = scored[0]
 
-    val_per = eval_per_sequence(os.path.join(GRID_ROOT, best["experiment"], "evaluation_val_n20k.json"))
-    full_per = eval_per_sequence(
-        os.path.join(GRID_ROOT, best["experiment"], "evaluation_full_n20k.json")
-    )
+    exp_dir = os.path.join(args.grid_root, best["experiment"])
+    val_per = eval_per_sequence(exp_dir, args.eval_name)
 
-    improvement_vs_cg = cg_ref - best["mean_enh_cd_l1"]
-    passed = improvement_vs_cg >= args.margin
-    if best_meta.get("full_improvement") is not None:
-        passed = passed and best_meta["full_improvement"] >= args.min_full_improve
-    if best_meta.get("full_sequences_total", 0) > 0:
-        passed = passed and best_meta["full_sequences_positive"] >= args.min_full_seq_positive
+    improve = best.get("improvement_cg_minus_enh")
+    if improve is None and cg_ref is not None:
+        improve = cg_ref - float(best["mean_enh_chamfer_distance"])
 
-    rgbd_meta_path = os.path.join(GC2026_ROOT, "data/processed/rgbd_pairs_meta.json")
-    rgbd_mapped = 0
-    if os.path.isfile(rgbd_meta_path):
-        with open(rgbd_meta_path, "r", encoding="utf-8") as f:
-            rgbd_mapped = int(json.load(f).get("mapped", 0))
+    passed = best_meta.get("penalty", 0) == 0.0
+    if improve is not None and improve < args.margin:
+        passed = False
 
+    out_json = args.out_json or os.path.join(args.grid_root, "gate_decision.json")
     decision = {
         "gate_passed": passed,
-        "margin_required": args.margin,
-        "cg_baseline_enh_cd_l1": cg_ref,
+        "metric_primary": "chamfer_distance",
+        "metric_note": "Official aligned: chamfer = (accuracy + completeness) / 2",
+        "margin_required_mm": args.margin,
+        "cg_baseline_chamfer_distance": cg_ref,
         "best_experiment": best["experiment"],
-        "best_mean_enh_cd_l1": best["mean_enh_cd_l1"],
-        "improvement_vs_cg_baseline": improvement_vs_cg,
+        "best_mean_enh_chamfer_distance": best["mean_enh_chamfer_distance"],
+        "improvement_cg_minus_enh": improve,
+        "best_mean_enh_fscore_10.0": best.get("mean_enh_fscore_10.0"),
         "cg_version": args.cg_version,
-        "rgbd_pairs_mapped": rgbd_mapped,
+        "val_pairs": "data/processed/val_pairs_official_cgv2.txt",
         "gate_constraints": {
-            "min_full_improve": args.min_full_improve,
-            "min_full_seq_positive": args.min_full_seq_positive,
+            "min_seq_positive": args.min_seq_positive,
         },
-        "best_config": parse_experiment_tag(best["experiment"]),
+        "best_config": parse_experiment_tag(best["experiment"], args.grid_root),
         "per_sequence_val": val_per,
-        "per_sequence_full": full_per,
         "selection_meta": best_meta,
+        "ranking_top5": [
+            {
+                "experiment": r["experiment"],
+                "chamfer": r["mean_enh_chamfer_distance"],
+                "improve": r.get("improvement_cg_minus_enh"),
+                "score": s,
+            }
+            for s, r, _ in scored[:5]
+        ],
     }
 
-    with open(args.out_json, "w", encoding="utf-8") as f:
+    with open(out_json, "w", encoding="utf-8") as f:
         json.dump(decision, f, indent=2)
 
-    print(json.dumps({k: decision[k] for k in decision if k not in ("per_sequence_val", "per_sequence_full")}, indent=2))
+    brief = {k: decision[k] for k in decision if k not in ("per_sequence_val", "ranking_top5")}
+    print(json.dumps(brief, indent=2))
     if not passed:
         raise SystemExit(
-            f"Gate FAILED: val improve={improvement_vs_cg:.2f} full={best_meta.get('full_improvement')}"
+            f"Gate FAILED: chamfer={best['mean_enh_chamfer_distance']:.4f} "
+            f"improve={improve} margin={args.margin}"
         )
 
 

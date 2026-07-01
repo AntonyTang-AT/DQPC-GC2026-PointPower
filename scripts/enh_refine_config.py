@@ -109,6 +109,25 @@ def _hybrid_extra(
     }
 
 
+def _holefill_extra(**kwargs) -> dict:
+    return {
+        **_hybrid_extra(fill_role="secondary_only"),
+        "hybrid_fill_anchor": "primary",
+        "hybrid_hole_mask": "cg_holes",
+        **kwargs,
+    }
+
+
+# ft density refine applied to primary before optional SuperPC (architecture v2).
+PRIMARY_DENSITY_REFINE = {
+    "snap_mm": 1.0,
+    "fill_mm": 0.6,
+    "fill_mode": "density_adaptive",
+    "fill_density_k": 6,
+    "fill_density_scale_max": 2.0,
+}
+
+
 def _hybrid(name: str, **kwargs) -> RefineConfig:
     extra = _hybrid_extra()
     snap = kwargs.pop("snap_mm", 1.0)
@@ -237,6 +256,224 @@ GRID_PRESETS: List[RefineConfig] = [
         "hybrid_pdlts_superpc_snap1_fill0.6_superfill",
         fill_mode="fixed",
         extra=_hybrid_extra(fill_role="secondary_only"),
+    ),
+    _hybrid(
+        "region_hybrid_pdlts_superpc_snap1_fill0.6_density",
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=2.0,
+        extra={
+            **_hybrid_extra(fill_role="region_mask"),
+            "region_r_in_mm": 25.0,
+            "region_r_out_mm": 45.0,
+        },
+    ),
+    _hybrid(
+        "temporal_region_hybrid_pdlts_superpc_snap1_fill0.6_density",
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=2.0,
+        temporal_window=5,
+        extra={
+            **_hybrid_extra(fill_role="temporal_region_mask"),
+            "temporal_match_mm": 15.0,
+            "temporal_tau_interior": 0.6,
+            "temporal_tau_exterior": 0.2,
+            "temporal_cg_link_mm": 25.0,
+        },
+    ),
+    _hybrid(
+        "temporal_attn_hybrid_pdlts_superpc_snap1_fill0.6_density",
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=2.0,
+        temporal_window=15,
+        extra={
+            **_hybrid_extra(fill_role="temporal_attn_region_mask"),
+            "temporal_match_mm": 15.0,
+            "temporal_tau_interior": 0.6,
+            "temporal_tau_exterior": 0.2,
+            "temporal_cg_link_mm": 25.0,
+            "temporal_attn_tau_time": 8.0,
+            "temporal_attn_tau_dist": 12.0,
+            "temporal_disp_agree_mm": 8.0,
+            "temporal_cg_weight": 0.35,
+            "temporal_enh_weight": 0.65,
+        },
+    ),
+    # Primary-heavy hybrid: less SuperPC fill, tighter CG-interior mask (preserve ft geometry).
+    _hybrid(
+        "region_hybrid_pdlts_superpc_snap1_fill0.25_density_rin15",
+        fill_mm=0.25,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.5,
+        extra={
+            **_hybrid_extra(fill_role="region_mask"),
+            "region_r_in_mm": 15.0,
+            "region_r_out_mm": 30.0,
+        },
+    ),
+    _hybrid(
+        "region_hybrid_pdlts_superpc_snap1_fill0.35_density_rin18",
+        fill_mm=0.35,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.8,
+        extra={
+            **_hybrid_extra(fill_role="region_mask"),
+            "region_r_in_mm": 18.0,
+            "region_r_out_mm": 35.0,
+        },
+    ),
+    _hybrid(
+        "region_hybrid_pdlts_superpc_snap1_fill0.2_density_rin12",
+        fill_mm=0.2,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.3,
+        extra={
+            **_hybrid_extra(fill_role="region_mask"),
+            "region_r_in_mm": 12.0,
+            "region_r_out_mm": 25.0,
+        },
+    ),
+    # CG-hole fill on primary (ft) surface; secondary SuperPC only where CG sparse.
+    _hybrid(
+        "holefill_secondary_cg_hybrid_pdlts_superpc_snap1_fill0.6_density",
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=2.0,
+        extra=_holefill_extra(),
+    ),
+    # Fill first, snap, then post-SOR denoise on merged cloud.
+    _hybrid(
+        "holefill_first_secondary_cg_hybrid_pdlts_superpc_fill0.6_post25_density",
+        snap_mm=1.0,
+        fill_mm=0.6,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=2.0,
+        post_sor=True,
+        post_sor_std=2.5,
+        extra=_holefill_extra(fill_before_snap=True),
+    ),
+    # Lower SuperPC weight: smaller fill, cap added pts, skip post-SOR when fill is tiny.
+    _hybrid(
+        "holefill_lite_fill0.25_max3pct_nopost_snap0",
+        snap_mm=0.0,
+        fill_mm=0.25,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.3,
+        extra=_holefill_extra(
+            fill_before_snap=True,
+            hybrid_max_fill_ratio=0.03,
+        ),
+    ),
+    _hybrid(
+        "holefill_lite_fill0.25_max10pct_adaptive_post25",
+        snap_mm=0.0,
+        fill_mm=0.25,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.3,
+        post_sor=True,
+        post_sor_std=2.5,
+        extra=_holefill_extra(
+            fill_before_snap=True,
+            hybrid_max_fill_ratio=0.10,
+            adaptive_post_sor=True,
+            adaptive_post_sor_min_add_ratio=0.02,
+        ),
+    ),
+    _hybrid(
+        "holefill_adaptive_frame_gate",
+        snap_mm=0.0,
+        fill_mm=0.25,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.3,
+        post_sor=True,
+        post_sor_std=2.5,
+        extra=_holefill_extra(
+            fill_before_snap=True,
+            hybrid_max_fill_ratio=0.10,
+            adaptive_post_sor=True,
+            adaptive_post_sor_min_add_ratio=0.02,
+            frame_fill_gate=True,
+            frame_fill_gate_probe_fill_mm=0.25,
+            frame_fill_gate_probe_scale_max=1.3,
+            frame_fill_gate_probe_max_ratio=0.10,
+            frame_fill_gate_probe_k=6,
+            frame_fill_gate_skip_add_ratio=0.022,
+            frame_fill_gate_full_add_ratio=0.040,
+            frame_fill_gate_k=6,
+            frame_fill_gate_tiers={
+                "skip": {"fill_mm": 0.0, "post_sor": False},
+                "lite": {
+                    "fill_mm": 0.25,
+                    "fill_density_scale_max": 1.3,
+                    "hybrid_max_fill_ratio": 0.10,
+                    "post_sor": False,
+                    "adaptive_post_sor": True,
+                    "adaptive_post_sor_min_add_ratio": 0.02,
+                },
+                "full": {
+                    "fill_mm": 0.6,
+                    "fill_density_scale_max": 2.0,
+                    "hybrid_max_fill_ratio": 0.15,
+                    "post_sor": True,
+                    "post_sor_std": 2.5,
+                    "adaptive_post_sor": False,
+                },
+            },
+        ),
+    ),
+    _hybrid(
+        "holefill_adaptive_frame_gate_v2",
+        snap_mm=0.0,
+        fill_mm=0.25,
+        fill_mode="density_adaptive",
+        fill_density_k=6,
+        fill_density_scale_max=1.3,
+        post_sor=True,
+        post_sor_std=2.5,
+        extra=_holefill_extra(
+            primary_density_refine=dict(PRIMARY_DENSITY_REFINE),
+            fill_before_snap=True,
+            hybrid_max_fill_ratio=0.10,
+            adaptive_post_sor=True,
+            adaptive_post_sor_min_add_ratio=0.02,
+            frame_fill_gate=True,
+            frame_fill_gate_skip_sequences=["VictoryHeart", "VirtualLife"],
+            frame_fill_gate_probe_fill_mm=0.25,
+            frame_fill_gate_probe_scale_max=1.3,
+            frame_fill_gate_probe_max_ratio=0.10,
+            frame_fill_gate_probe_k=6,
+            frame_fill_gate_skip_add_ratio=0.022,
+            frame_fill_gate_full_add_ratio=0.040,
+            frame_fill_gate_k=6,
+            frame_fill_gate_tiers={
+                "skip": {"fill_mm": 0.0, "post_sor": False},
+                "lite": {
+                    "fill_mm": 0.25,
+                    "fill_density_scale_max": 1.3,
+                    "hybrid_max_fill_ratio": 0.10,
+                    "post_sor": False,
+                    "adaptive_post_sor": True,
+                    "adaptive_post_sor_min_add_ratio": 0.02,
+                },
+                "full": {
+                    "fill_mm": 0.6,
+                    "fill_density_scale_max": 2.0,
+                    "hybrid_max_fill_ratio": 0.15,
+                    "post_sor": True,
+                    "post_sor_std": 2.5,
+                    "adaptive_post_sor": False,
+                },
+            },
+        ),
     ),
     RefineConfig(
         name="pdlts_light_snap1_fill0.6_density_temporal5",

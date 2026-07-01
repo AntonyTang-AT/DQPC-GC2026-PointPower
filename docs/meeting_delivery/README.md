@@ -1,44 +1,50 @@
-# 学长交付物（2026-06-29）
+# GC2026 Enhancement Only — 学长交付（精简版）
 
-> **路径说明**  
-> - **GitHub / 仓库正式路径**：`docs/meeting_delivery/`  
-> - **本地运行镜像**：`output/meeting_delivery/`（由 `prepare_meeting_delivery.sh` 自动同步，不入库）
+> **评估集**：官方 val565（TrumanShow + VictoryHeart + VirtualLife，564 帧）  
+> **指标**：`chamfer_distance = (accuracy + completeness) / 2`（mm，对齐 HE）  
+> **提交候选**：`holefill_adaptive_frame_gate_v2`（已 fine-tune PD-LTS 最佳融合）
 
-## 推荐阅读顺序
+## 五条主线结果
 
-1. **[PROJECT_STRATEGY_REPORT.md](PROJECT_STRATEGY_REPORT.md)** — 总思路、选型、成败、为何不提交 vh_snap0  
-2. **[VAL565_METRICS_XLSX.md](VAL565_METRICS_XLSX.md)** — Excel 各 sheet 含义  
-3. **[MODEL_MODIFICATION_REPORT.md](MODEL_MODIFICATION_REPORT.md)** — 论文 Method 参考  
-4. **[SUBMISSION_COMPLIANCE.md](SUBMISSION_COMPLIANCE.md)** — 提交包合规核查  
+| # | 类别 | Preset | CD (mm) | 逐帧数据 |
+|---|------|--------|---------|----------|
+| 1 | **仅 SuperPC**（含后处理） | `filter_cg` + snap 1 mm | **18.353** | [01_superpc_best_val565.csv](metrics/01_superpc_best_val565.csv)（分序列汇总） |
+| 2 | **仅 PD-LTS 未 fine-tune**（含后处理） | `vh_snap0` | **17.440** | [02_pdlts_frozen_best_val565.csv](metrics/02_pdlts_frozen_best_val565.csv) |
+| 3 | **仅 PD-LTS 已 fine-tune**（含后处理） | `snap1 + fill0.6 density` | **14.883** | [03_pdlts_finetune_best_val565.csv](metrics/03_pdlts_finetune_best_val565.csv) |
+| 4 | **未 fine-tune PD-LTS 最佳融合** | `region_hybrid` + density | **16.502** | [04_fusion_frozen_pdlts_best_val565.csv](metrics/04_fusion_frozen_pdlts_best_val565.csv) |
+| 5 | **已 fine-tune PD-LTS 最佳融合（提交）** | `frame_gate v2` | **14.870** | [05_fusion_finetune_pdlts_best_val565.csv](metrics/05_fusion_finetune_pdlts_best_val565.csv) |
+| — | CG baseline | 官方 CGv2 | 17.552 | Excel sheet2 |
 
-## 1. 验证集 gc_baseline 指标（564 帧）
+- **汇总**： [metrics/models_registry.json](metrics/models_registry.json) · [metrics/summary.json](metrics/summary.json)
+- **Excel**：[val565_five_models.xlsx](val565_five_models.xlsx)
+- **完整报告**：[REPORT.md](REPORT.md)
+- **提交 gate**：[config/submission_gate.json](config/submission_gate.json)
 
-指标：`chamfer_distance = (accuracy + completeness) / 2`（mm），与仓库根目录 `ACMMM26_GC_baseline.csv` 同口径。
+## 配图
 
-| 模型 | CSV | 说明 |
-|------|-----|------|
-| SuperPC blend_cg（旧线） | [metrics/01_...csv](metrics/01_superpc_blend_cg_kitti360_vx3.0_val565.csv) | kitti360 + blend_cg + voxel 3mm |
-| PD-LTS vh_snap0（ablation） | [metrics/02_...csv](metrics/02_pdlts_vh_snap0_val565.csv) | density + VH 序列 snap=0 |
-| **PD-LTS density（提交）** | [metrics/03_...csv](metrics/03_pdlts_density_global_snap_no_vh_tune_val565.csv) | 全局 snap=1, density fill |
-| PD-LTS raw | [metrics/04_...csv](metrics/04_pdlts_raw_val565.csv) | 仅去噪，无 refine |
-| SuperPC filter+snap | [metrics/05_...csv](metrics/05_superpc_filter_snap1.0_val565.csv) | Phase2 最优；分序列汇总 |
+| 文件 | 说明 |
+|------|------|
+| [figures/bar_val565_five_models.png](figures/bar_val565_five_models.png) | 五主线 + CG 分序列柱状图 |
+| [figures/diagram_pipeline_pdlts_density.png](figures/diagram_pipeline_pdlts_density.png) | 管线示意 |
+| [figures/compare_ts0072.png](figures/compare_ts0072.png) | TrumanShow 稀疏帧对比 |
+| [figures/compare_vh0041.png](figures/compare_vh0041.png) | VictoryHeart 典型帧对比 |
 
-- **Excel**：[val565_gc_baseline_metrics.xlsx](val565_gc_baseline_metrics.xlsx)  
-- **汇总 JSON**：[metrics/summary.json](metrics/summary.json)  
-- **Gate 快照**：[gate_snapshots/pdlts_gate_decision.json](gate_snapshots/pdlts_gate_decision.json)、[gate_snapshots/superpc_gate_decision.json](gate_snapshots/superpc_gate_decision.json)
-
-## 2. 主办方提交包（Enhancement Only / PD-LTS density）
-
-- 源码目录：[submissions/GC2026_Team_EnhancementOnly/](../../submissions/GC2026_Team_EnhancementOnly/)
-- 构建脚本：`bash scripts/build_pdlts_density_submission.sh`
-- 冒烟验证：`bash scripts/verify_submission_enhancement_only.sh`
-- 全量 ENH 输出（本地跑完后）：`output/submission_candidate_pdlts_density/`（不入库）
-
-## 3. 重新生成本目录
+## 提交包
 
 ```bash
-export GC2026_ROOT=/path/to/GC2026-UVG-FullPipeline-SuperPC
+# 构建
+bash scripts/build_frame_gate_v2_submission.sh
+# 打包产物
+output/GC2026_submission_EnhancementOnly_frame_gate_v2.tar.gz
+```
+
+源码：`submissions/GC2026_Team_EnhancementOnly/`（Enhancement Only）
+
+## 重新生成
+
+```bash
+export GC2026_ROOT=/path/to/GC2026
 bash scripts/prepare_meeting_delivery.sh
 ```
 
-脚本会写入 `docs/meeting_delivery/` 并镜像到 `output/meeting_delivery/`。
+本地镜像：`output/meeting_delivery/`

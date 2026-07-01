@@ -569,7 +569,284 @@ def filter_cg_outliers(xyz: np.ndarray, rgb: np.ndarray, nb_neighbors: int = 20,
     return np.asarray(pc_clean.points, dtype=np.float32), np.asarray(pc_clean.colors, dtype=np.float32)
 
 
-def rgbd_color_to_depth_path(color_path: str) -> Optional[str]:
+def merge_cg_model_fill(
+    cg_xyz: np.ndarray,
+    cg_rgb: np.ndarray,
+    model_xyz: np.ndarray,
+    model_rgb: np.ndarray,
+    fill_radius_mm: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Keep all CG points; add model points only where CG has no neighbor within fill_radius.
+
+    Chamfer-oriented: preserves CG accuracy while model fills holes for completeness.
+    """
+    if model_xyz.shape[0] == 0:
+        return cg_xyz, cg_rgb
+    if cg_xyz.shape[0] == 0:
+        return model_xyz, model_rgb
+
+    from sklearn.neighbors import NearestNeighbors
+
+    nn = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn.fit(cg_xyz)
+    dist, _ = nn.kneighbors(model_xyz, return_distance=True)
+    mask = dist[:, 0] > float(fill_radius_mm)
+    extra_xyz = model_xyz[mask]
+    extra_rgb = model_rgb[mask]
+    if extra_xyz.shape[0] == 0:
+        return cg_xyz, cg_rgb
+    out_xyz = np.vstack([cg_xyz, extra_xyz]).astype(np.float32)
+    out_rgb = np.vstack([cg_rgb, extra_rgb]).astype(np.float32)
+    return out_xyz, out_rgb
+
+
+def snap_xyz_to_reference(
+    xyz: np.ndarray,
+    ref_xyz: np.ndarray,
+    snap_mm: float,
+) -> np.ndarray:
+    """Move points within snap_mm of ref onto the nearest ref point (accuracy bias)."""
+    if snap_mm <= 0 or xyz.shape[0] == 0 or ref_xyz.shape[0] == 0:
+        return xyz
+    from sklearn.neighbors import NearestNeighbors
+
+    nn = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn.fit(ref_xyz)
+    dist, idx = nn.kneighbors(xyz, return_distance=True)
+    out = xyz.copy()
+    close = dist[:, 0] <= float(snap_mm)
+    if np.any(close):
+        out[close] = ref_xyz[idx[close, 0]]
+    return out.astype(np.float32)
+
+
+def snap_bidirectional_cg_model(
+    model_xyz: np.ndarray,
+    cg_xyz: np.ndarray,
+    snap_mm: float,
+    cg_pull_mm: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Snap model toward CG; pull sparse CG outliers toward model when within cg_pull_mm."""
+    if model_xyz.shape[0] == 0 or cg_xyz.shape[0] == 0:
+        return model_xyz, cg_xyz
+    snapped = snap_xyz_to_reference(model_xyz, cg_xyz, snap_mm)
+    if cg_pull_mm <= 0:
+        return snapped, cg_xyz
+
+    from sklearn.neighbors import NearestNeighbors
+
+    nn_cg = NearestNeighbors(n_neighbors=min(6, cg_xyz.shape[0]), algorithm="auto")
+    nn_cg.fit(cg_xyz)
+    cg_dists, _ = nn_cg.kneighbors(cg_xyz, return_distance=True)
+    local_spacing = cg_dists[:, -1]
+    med = float(np.median(local_spacing[local_spacing > 0])) if np.any(local_spacing > 0) else 1.0
+    sparse = local_spacing > (1.5 * med)
+
+    nn_model = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_model.fit(snapped)
+    m_dist, m_idx = nn_model.kneighbors(cg_xyz, return_distance=True)
+    cg_out = cg_xyz.copy()
+    pull = sparse & (m_dist[:, 0] <= float(cg_pull_mm))
+    if np.any(pull):
+        cg_out[pull] = snapped[m_idx[pull, 0]]
+    return snapped.astype(np.float32), cg_out.astype(np.float32)
+
+
+def merge_cg_model_fill_density_adaptive(
+    cg_xyz: np.ndarray,
+    cg_rgb: np.ndarray,
+    model_xyz: np.ndarray,
+    model_rgb: np.ndarray,
+    base_fill_mm: float,
+    k_neighbors: int = 6,
+    scale_max: float = 2.0,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Adaptive fill radius from local CG spacing (wider fill in sparse regions)."""
+    if model_xyz.shape[0] == 0:
+        return cg_xyz, cg_rgb
+    if cg_xyz.shape[0] == 0:
+        return model_xyz, model_rgb
+
+    from sklearn.neighbors import NearestNeighbors
+
+    k = min(max(int(k_neighbors), 2), cg_xyz.shape[0])
+    nn_cg = NearestNeighbors(n_neighbors=k, algorithm="auto")
+    nn_cg.fit(cg_xyz)
+    cg_dists, _ = nn_cg.kneighbors(cg_xyz, return_distance=True)
+    local_spacing = cg_dists[:, -1]
+    med = float(np.median(local_spacing[local_spacing > 0])) if np.any(local_spacing > 0) else float(base_fill_mm)
+    med = max(med, 1e-6)
+
+    nn_to_cg = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_to_cg.fit(cg_xyz)
+    dist, cg_idx = nn_to_cg.kneighbors(model_xyz, return_distance=True)
+    scales = np.clip(local_spacing[cg_idx[:, 0]] / med, 0.5, float(scale_max))
+    thresh = float(base_fill_mm) * scales
+    mask = dist[:, 0] > thresh
+    extra_xyz = model_xyz[mask]
+    extra_rgb = model_rgb[mask]
+    if extra_xyz.shape[0] == 0:
+        return cg_xyz, cg_rgb
+    out_xyz = np.vstack([cg_xyz, extra_xyz]).astype(np.float32)
+    out_rgb = np.vstack([cg_rgb, extra_rgb]).astype(np.float32)
+    return out_xyz, out_rgb
+
+
+def _cap_secondary_fill(
+    primary_xyz: np.ndarray,
+    extra_xyz: np.ndarray,
+    extra_rgb: np.ndarray,
+    max_fill_ratio: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Limit SuperPC contribution as a fraction of primary point count."""
+    if extra_xyz.shape[0] == 0 or max_fill_ratio <= 0:
+        return extra_xyz, extra_rgb
+    max_n = max(1, int(primary_xyz.shape[0] * float(max_fill_ratio)))
+    if extra_xyz.shape[0] <= max_n:
+        return extra_xyz, extra_rgb
+    from sklearn.neighbors import NearestNeighbors
+
+    nn = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn.fit(primary_xyz)
+    dist, _ = nn.kneighbors(extra_xyz, return_distance=True)
+    keep = np.argsort(-dist[:, 0])[:max_n]
+    return extra_xyz[keep], extra_rgb[keep]
+
+
+def _finalize_primary_fill(
+    primary_xyz: np.ndarray,
+    primary_rgb: np.ndarray,
+    extra_xyz: np.ndarray,
+    extra_rgb: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    if extra_xyz.shape[0] == 0:
+        return primary_xyz, primary_rgb
+    out_xyz = np.vstack([primary_xyz, extra_xyz]).astype(np.float32)
+    out_rgb = np.vstack([primary_rgb, extra_rgb]).astype(np.float32)
+    return out_xyz, out_rgb
+
+
+def merge_primary_fill_cg_holes(
+    primary_xyz: np.ndarray,
+    primary_rgb: np.ndarray,
+    secondary_xyz: np.ndarray,
+    secondary_rgb: np.ndarray,
+    cg_xyz: np.ndarray,
+    fill_radius_mm: float,
+    max_fill_ratio: float = 0.0,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Keep primary surface; add secondary only where CG is sparse and primary uncovered."""
+    if secondary_xyz.shape[0] == 0:
+        return primary_xyz, primary_rgb
+    if primary_xyz.shape[0] == 0:
+        return secondary_xyz, secondary_rgb
+
+    from sklearn.neighbors import NearestNeighbors
+
+    nn_cg = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_cg.fit(cg_xyz)
+    dist_cg, _ = nn_cg.kneighbors(secondary_xyz, return_distance=True)
+
+    nn_primary = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_primary.fit(primary_xyz)
+    dist_primary, _ = nn_primary.kneighbors(secondary_xyz, return_distance=True)
+
+    mask = (dist_cg[:, 0] > float(fill_radius_mm)) & (dist_primary[:, 0] > float(fill_radius_mm))
+    extra_xyz = secondary_xyz[mask]
+    extra_rgb = secondary_rgb[mask]
+    if max_fill_ratio > 0:
+        extra_xyz, extra_rgb = _cap_secondary_fill(primary_xyz, extra_xyz, extra_rgb, max_fill_ratio)
+    return _finalize_primary_fill(primary_xyz, primary_rgb, extra_xyz, extra_rgb)
+
+
+def merge_primary_fill_cg_holes_density_adaptive(
+    primary_xyz: np.ndarray,
+    primary_rgb: np.ndarray,
+    secondary_xyz: np.ndarray,
+    secondary_rgb: np.ndarray,
+    cg_xyz: np.ndarray,
+    base_fill_mm: float,
+    k_neighbors: int = 6,
+    scale_max: float = 2.0,
+    max_fill_ratio: float = 0.0,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """CG-hole fill on primary anchor with density-adaptive radius from local CG spacing."""
+    if secondary_xyz.shape[0] == 0:
+        return primary_xyz, primary_rgb
+    if primary_xyz.shape[0] == 0:
+        return secondary_xyz, secondary_rgb
+
+    from sklearn.neighbors import NearestNeighbors
+
+    k = min(max(int(k_neighbors), 2), cg_xyz.shape[0])
+    nn_cg = NearestNeighbors(n_neighbors=k, algorithm="auto")
+    nn_cg.fit(cg_xyz)
+    cg_dists, _ = nn_cg.kneighbors(cg_xyz, return_distance=True)
+    local_spacing = cg_dists[:, -1]
+    med = float(np.median(local_spacing[local_spacing > 0])) if np.any(local_spacing > 0) else float(base_fill_mm)
+    med = max(med, 1e-6)
+
+    nn_to_cg = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_to_cg.fit(cg_xyz)
+    dist_cg, cg_idx = nn_to_cg.kneighbors(secondary_xyz, return_distance=True)
+    thresh_cg = float(base_fill_mm) * np.clip(local_spacing[cg_idx[:, 0]] / med, 0.5, float(scale_max))
+
+    nn_primary = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_primary.fit(primary_xyz)
+    dist_primary, _ = nn_primary.kneighbors(secondary_xyz, return_distance=True)
+
+    mask = (dist_cg[:, 0] > thresh_cg) & (dist_primary[:, 0] > thresh_cg)
+    extra_xyz = secondary_xyz[mask]
+    extra_rgb = secondary_rgb[mask]
+    if max_fill_ratio > 0:
+        extra_xyz, extra_rgb = _cap_secondary_fill(primary_xyz, extra_xyz, extra_rgb, max_fill_ratio)
+    return _finalize_primary_fill(primary_xyz, primary_rgb, extra_xyz, extra_rgb)
+
+
+def estimate_primary_fill_add_ratio(
+    primary_xyz: np.ndarray,
+    secondary_xyz: np.ndarray,
+    cg_xyz: np.ndarray,
+    base_fill_mm: float,
+    k_neighbors: int = 6,
+    scale_max: float = 2.0,
+    max_fill_ratio: float = 0.0,
+    secondary_max_samples: int = 60000,
+) -> float:
+    """Estimate SuperPC points added / primary count (cg_holes density-adaptive mask)."""
+    if secondary_xyz.shape[0] == 0 or primary_xyz.shape[0] == 0:
+        return 0.0
+    sec = secondary_xyz
+    if sec.shape[0] > secondary_max_samples:
+        idx = np.random.default_rng(0).choice(sec.shape[0], secondary_max_samples, replace=False)
+        sec = sec[idx]
+
+    from sklearn.neighbors import NearestNeighbors
+
+    k = min(max(int(k_neighbors), 2), cg_xyz.shape[0])
+    nn_cg = NearestNeighbors(n_neighbors=k, algorithm="auto")
+    nn_cg.fit(cg_xyz)
+    cg_dists, _ = nn_cg.kneighbors(cg_xyz, return_distance=True)
+    local_spacing = cg_dists[:, -1]
+    med = float(np.median(local_spacing[local_spacing > 0])) if np.any(local_spacing > 0) else float(base_fill_mm)
+    med = max(med, 1e-6)
+
+    nn_to_cg = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_to_cg.fit(cg_xyz)
+    dist_cg, cg_idx = nn_to_cg.kneighbors(sec, return_distance=True)
+    thresh_cg = float(base_fill_mm) * np.clip(local_spacing[cg_idx[:, 0]] / med, 0.5, float(scale_max))
+
+    nn_primary = NearestNeighbors(n_neighbors=1, algorithm="auto")
+    nn_primary.fit(primary_xyz)
+    dist_primary, _ = nn_primary.kneighbors(sec, return_distance=True)
+
+    mask = (dist_cg[:, 0] > thresh_cg) & (dist_primary[:, 0] > thresh_cg)
+    n_add = int(mask.sum())
+    if max_fill_ratio > 0:
+        cap = int(primary_xyz.shape[0] * float(max_fill_ratio))
+        n_add = min(n_add, cap)
+    return float(n_add) / max(int(primary_xyz.shape[0]), 1)
+
     """Map RGBD color image to paired depth image."""
     if not color_path:
         return None

@@ -1,0 +1,10 @@
+torch>=2.0
+numpy
+scipy
+open3d
+plyfile
+tqdm
+transformers
+accelerate
+Pillow
+gdown

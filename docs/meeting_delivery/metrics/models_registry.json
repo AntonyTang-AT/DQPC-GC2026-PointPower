@@ -1,0 +1,89 @@
+{
+  "updated": "five_models_delivery",
+  "submission_preset": "holefill_adaptive_frame_gate_v2",
+  "metric": "chamfer_distance = (accuracy + completeness) / 2",
+  "eval_set": "val565 (564 frames)",
+  "categories": [
+    {
+      "id": "superpc_only",
+      "label": "\u4ec5 SuperPC\uff08\u542b\u540e\u5904\u7406\uff09",
+      "preset": "SuperPC kitti360 filter_cg + snap 1 mm",
+      "csv": "metrics/01_superpc_best_val565.csv",
+      "eval_json": "Phase2 record (per-frame PLY deleted)",
+      "geometry": "superpc_blend_cg secondary only",
+      "role": "\u7814\u53d1\u7ebf\u6700\u4f18\uff1b\u4ecd\u52a3\u4e8e CG",
+      "mean_chamfer_mm": 18.3528080857124,
+      "num_frames": 564,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 20.1850000531591,
+        "VictoryHeart": 16.870683523245752,
+        "VirtualLife": 18.244000495776408
+      }
+    },
+    {
+      "id": "pdlts_frozen_only",
+      "label": "\u4ec5 PD-LTS \u672a fine-tune\uff08\u542b\u540e\u5904\u7406\uff09",
+      "preset": "vh_snap0 (density base + VictoryHeart snap=0)",
+      "csv": "metrics/02_pdlts_frozen_best_val565.csv",
+      "eval_json": "output/enh_refine_val565_selection/vh_snap0/evaluation_gc_baseline_val565.json",
+      "geometry": "frozen Denoiseflow-light-FBM",
+      "role": "val565 \u51bb\u7ed3\u6743\u91cd\u6700\u4f18\uff1b\u5168\u5c40\u7edf\u4e00\u914d\u7f6e density=17.504 mm",
+      "alt_preset": "pdlts_light_snap1_fill0.6_density (global uniform, 17.504 mm)",
+      "mean_chamfer_mm": 17.439915302705494,
+      "num_frames": 564,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 19.26818938314372,
+        "VictoryHeart": 16.024258624384654,
+        "VirtualLife": 17.26771886328841
+      }
+    },
+    {
+      "id": "pdlts_finetune_only",
+      "label": "\u4ec5 PD-LTS \u5df2 fine-tune\uff08\u542b\u540e\u5904\u7406\uff09",
+      "preset": "pdlts_light_snap1_fill0.6_density (UVG finetune ckpt)",
+      "csv": "metrics/03_pdlts_finetune_best_val565.csv",
+      "eval_json": "output/pdlts_finetune_uvg/val565_refine/pdlts_light_snap1_fill0.6_density/evaluation_gc_baseline_val565.json",
+      "geometry": "DenoiseFlow-light-UVG-finetune",
+      "role": "\u65e0 SuperPC \u878d\u5408\u57fa\u7ebf",
+      "mean_chamfer_mm": 14.88311756852571,
+      "num_frames": 564,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 16.548977648901843,
+        "VictoryHeart": 13.981829191332645,
+        "VirtualLife": 14.335626428539571
+      }
+    },
+    {
+      "id": "fusion_frozen_pdlts",
+      "label": "\u672a fine-tune PD-LTS \u6700\u4f73\u878d\u5408",
+      "preset": "region_hybrid_pdlts_superpc_snap1_fill0.6_density",
+      "csv": "metrics/04_fusion_frozen_pdlts_best_val565.csv",
+      "eval_json": "output/enh_refine_val565_selection/region_hybrid_pdlts_superpc_snap1_fill0.6_density/evaluation_gc_baseline_val565.json",
+      "geometry": "frozen PD-LTS primary + SuperPC blend_cg region fill",
+      "role": "\u51bb\u7ed3\u6743\u91cd hybrid \u6700\u4f18",
+      "mean_chamfer_mm": 16.501719793525133,
+      "num_frames": 564,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 17.71659235546278,
+        "VictoryHeart": 15.902948045433318,
+        "VirtualLife": 16.043632172518766
+      }
+    },
+    {
+      "id": "fusion_finetune_pdlts",
+      "label": "\u5df2 fine-tune PD-LTS \u6700\u4f73\u878d\u5408\uff08\u63d0\u4ea4\uff09",
+      "preset": "holefill_adaptive_frame_gate_v2",
+      "csv": "metrics/05_fusion_finetune_pdlts_best_val565.csv",
+      "eval_json": "output/ft_val565_fusion/holefill_adaptive_frame_gate_v2/evaluation_gc_baseline_val565.json",
+      "geometry": "ft PD-LTS + always density + frame SuperPC gate",
+      "role": "\u5f53\u524d Enhancement Only \u63d0\u4ea4\u5019\u9009",
+      "mean_chamfer_mm": 14.869924023553802,
+      "num_frames": 564,
+      "per_sequence_mean_chamfer": {
+        "TrumanShow": 16.50546209706467,
+        "VictoryHeart": 13.981829191332645,
+        "VirtualLife": 14.335626428539571
+      }
+    }
+  ]
+}

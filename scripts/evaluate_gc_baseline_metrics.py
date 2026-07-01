@@ -72,10 +72,12 @@ def compute_gc_metrics(
             out[f"fscore_{ts}"] = 0.0
         return out
 
+    # Avoid nested all-core parallelism when ProcessPoolExecutor runs many workers.
+    kdtree_workers = 1 if os.environ.get("GC2026_EVAL_PARALLEL") == "1" else -1
     tree_gt = cKDTree(gt_xyz)
     tree_test = cKDTree(test_xyz)
-    d_gt_to_test, _ = tree_test.query(gt_xyz, k=1, workers=-1)
-    d_test_to_gt, _ = tree_gt.query(test_xyz, k=1, workers=-1)
+    d_gt_to_test, _ = tree_test.query(gt_xyz, k=1, workers=kdtree_workers)
+    d_test_to_gt, _ = tree_gt.query(test_xyz, k=1, workers=kdtree_workers)
 
     accuracy = float(d_test_to_gt.mean())
     completeness = float(d_gt_to_test.mean())
@@ -282,6 +284,7 @@ def main() -> None:
             if rec:
                 records.append(rec)
     else:
+        os.environ["GC2026_EVAL_PARALLEL"] = "1"
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
             futures = [pool.submit(_worker_task, p) for p in tasks]
             for fut in tqdm(as_completed(futures), total=len(futures), desc="gc_metrics"):

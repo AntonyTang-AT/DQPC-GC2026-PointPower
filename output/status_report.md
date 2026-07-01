@@ -1,17 +1,17 @@
 # GC2026 UVG-CWI-DQPC Status
 
-Generated: 2026-06-19T23:20:49.283057Z
+Generated: 2026-06-21T08:27:59.944325Z
 
 ## Processing Tracks
 
 | Track | Role | Val improve (n=20k) |
 |-------|------|---------------------|
-| Full Pipeline (primary) | RGBD→CG→SuperPC | None |
-| Enhancement Only (fallback) | Official CG→SuperPC | 14.460028510500152 |
+| Full Pipeline (primary) | RGBD→CG→SuperPC | pending |
+| Enhancement Only (fallback) | Official CG→SuperPC | n/a |
 
 ## Enhancement Metrics (val)
 
-- Chamfer improve (n=20k): 14.460028510500152
+- Chamfer improve (n=20k): n/a
 - Color PSNR-Y: 63.52832913126947
 - Temporal adjacent CD-L1: 15.415282050768534
 - ENH frames: 2155
@@ -19,23 +19,23 @@ Generated: 2026-06-19T23:20:49.283057Z
 ## RGBD Download (val sequences)
 
 ```
-TicTacToe/RGBD: disk=0.00 GB [DOWNLOADING]
-VictoryHeart/RGBD: disk=0.00 GB [DOWNLOADING]
+TicTacToe/RGBD: disk=0.00 GB [MISSING]
+VictoryHeart/RGBD: disk=0.00 GB [MISSING]
 Incomplete: TicTacToe_UVG-CWI-DQPC_v1-0_RGBD.zip, VictoryHeart_UVG-CWI-DQPC_v1-0_RGBD.zip
 ```
 
 ## Background Chain
 
-- Stage: waiting for val RGBD download
+- Stage: unknown / not started
 - Logs: `output/wait_rgbd_val.log`, `output/full_pipeline_chain.log`
-- aria2 tail: `14294 Killed                  | aria2c --console-log-level=notice --max-concurrent-downloads="$JOBS" --split="$S" --max-`
+- aria2 tail: `n/a`
 
 ## Submission Artifacts
 
 | Artifact | Path | Status |
 |----------|------|--------|
 | Enhancement tar | `output/submission_candidate_submission.tar.gz` | missing |
-| Full Pipeline tar | `output/full_pipeline_candidate_submission.tar.gz` | exists |
+| Full Pipeline tar | `output/full_pipeline_candidate_submission.tar.gz` | pending |
 | Primary manifest | `submissions/GC2026_Team/manifest.json` | Enhancement until Full ready |
 
 RGBD mapped: 2155 missing: 0

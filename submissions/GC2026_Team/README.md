@@ -5,7 +5,7 @@ We participate in **both** official Processing Tracks on the same challenge.
 
 | Track | Input | Script | Output dir |
 |-------|-------|--------|------------|
-| **Full Pipeline** (primary) | Intel RealSense RGBD / .bag files | `bash src/run_full_pipeline.sh` | `output/full_pipeline_candidate/` |
+| **Full Pipeline** (primary) | Intel RealSense RGBD / .bag files | `bash src/run_full_pipeline.sh` | `output/full_pipeline_n0_v2_candidate/` |
 | Enhancement Only | Official CG PLY | `bash src/run_enhancement_only.sh` | `output/submission_candidate/` |
 
 | Field | Value |

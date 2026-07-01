@@ -1,0 +1,15 @@
+# Docker build context exclusions
+data/raw/UVG-CWI-DQPC/
+output/
+.git/
+**/.git/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.tar.gz
+*.ply
+code/Metric/
+code/cwipc/
+*.bag
+code/SuperPC/**/build/
+code/SuperPC/**/*.so

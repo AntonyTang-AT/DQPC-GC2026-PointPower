@@ -7,13 +7,13 @@ SCRIPT_DIR="${GC2026_ROOT}/scripts"
 PY="${PY:-python3.12}"
 STAGE1_JOBS="${STAGE1_JOBS:-6}"
 CG_ALL="${CG_ALL:-${GC2026_ROOT}/data/processed/all_cg_only_cgv2.txt}"
-OUT_ROOT="${OUT_ROOT:-${GC2026_ROOT}/output/full_pipeline_cg}"
-STAGE1_CONFIG="${STAGE1_CONFIG:-${GC2026_ROOT}/output/remediation/stage1_config.json}"
-BASELINE_RECON="${BASELINE_RECON:-${GC2026_ROOT}/output/remediation/stage1_pgdr_val362}"
-VAL_SEQS="${VAL_SEQS:-TicTacToe,VictoryHeart}"
-# Per-sequence tag override: "Seq:tag,Seq:tag" (default: val sequences use N0)
-VAL_SEQ_TAG_OVERRIDES="${VAL_SEQ_TAG_OVERRIDES:-TicTacToe:N0_cwipc_official,VictoryHeart:N0_cwipc_official}"
+OUT_ROOT="${OUT_ROOT:-${GC2026_ROOT}/output/full_pipeline_n0_v2_cg}"
+STAGE1_CONFIG="${STAGE1_CONFIG:-${GC2026_ROOT}/output/stage1_config.json}"
+BASELINE_RECON="${BASELINE_RECON:-}"
+VAL_SEQS="${VAL_SEQS:-TrumanShow,VictoryHeart,VirtualLife}"
+VAL_SEQ_TAG_OVERRIDES="${VAL_SEQ_TAG_OVERRIDES:-VictoryHeart:N0_cwipc_official,TrumanShow:N0_cwipc_official,VirtualLife:N0_cwipc_official}"
 SWEEP_ROOT="${SWEEP_ROOT:-${GC2026_ROOT}/output/cwipc_native/val362_sweep}"
+WORK_DIR="${WORK_DIR:-${GC2026_ROOT}/output/stage1_work}"
 
 TAG="${TAG:-}"
 if [[ -z "$TAG" && -f "${GC2026_ROOT}/output/cwipc_native/stage1_production_tag.json" ]]; then
@@ -81,12 +81,15 @@ run_one_sequence() {
   local extra=()
   case "$tag" in
     B0_pgdr_hybrid)
+      [[ -f "$STAGE1_CONFIG" ]] || { echo "[stage1_parallel] ERROR: missing $STAGE1_CONFIG for hybrid"; return 1; }
       extra=(--backend hybrid --stage1-config "$STAGE1_CONFIG" --multi-camera --cwipc-filter-profile relaxed)
       ;;
     B1_hybrid_official)
+      [[ -f "$STAGE1_CONFIG" ]] || { echo "[stage1_parallel] ERROR: missing $STAGE1_CONFIG for hybrid"; return 1; }
       extra=(--backend hybrid --stage1-config "$STAGE1_CONFIG" --multi-camera --cwipc-filter-profile official)
       ;;
     B2_hybrid_mild)
+      [[ -f "$STAGE1_CONFIG" ]] || { echo "[stage1_parallel] ERROR: missing $STAGE1_CONFIG for hybrid"; return 1; }
       extra=(--backend hybrid --stage1-config "$STAGE1_CONFIG" --multi-camera --cwipc-filter-profile mild)
       ;;
     N0_cwipc_official)
@@ -99,7 +102,7 @@ run_one_sequence() {
       extra=(--backend cwipc --cwipc-filter-profile mild)
       ;;
     *)
-      extra=(--backend hybrid --stage1-config "$STAGE1_CONFIG" --multi-camera --cwipc-filter-profile official)
+      extra=(--backend cwipc --cwipc-filter-profile official)
       ;;
   esac
   "$PY" "${SCRIPT_DIR}/rgbd_to_cg.py" \
@@ -113,7 +116,8 @@ run_one_sequence() {
 export -f run_one_sequence
 export GC2026_ROOT SCRIPT_DIR PY CG_ALL STAGE1_CONFIG TAG
 
-python3 <<PY > "${GC2026_ROOT}/output/cwipc_native/_train_sequences.txt"
+mkdir -p "$WORK_DIR"
+python3 <<PY > "${WORK_DIR}/_train_sequences.txt"
 import json
 val = set("${VAL_SEQS}".split(","))
 data = json.load(open("${GC2026_ROOT}/data/raw/UVG-CWI-DQPC.json"))
@@ -123,12 +127,13 @@ for s in data["sequences"]:
 PY
 
 xargs -P "$STAGE1_JOBS" -I{} bash -c 'run_one_sequence "$1" "$2" "$3"' _ {} "$OUT_ROOT" "$TAG" \
-  < "${GC2026_ROOT}/output/cwipc_native/_train_sequences.txt"
+  < "${WORK_DIR}/_train_sequences.txt"
 
-"$PY" "${SCRIPT_DIR}/retry_missing_recon.py" \
-  --recon-root "$OUT_ROOT" \
-  --cg-list "$CG_ALL" \
-  --baseline-recon-root "$BASELINE_RECON" || true
+retry_args=(--recon-root "$OUT_ROOT" --cg-list "$CG_ALL")
+if [[ -n "$BASELINE_RECON" && -d "$BASELINE_RECON" ]]; then
+  retry_args+=(--baseline-recon-root "$BASELINE_RECON")
+fi
+"$PY" "${SCRIPT_DIR}/retry_missing_recon.py" "${retry_args[@]}" || true
 
 "$PY" <<PY
 import os

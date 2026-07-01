@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import Dict, Optional, Tuple
 
 GC2026_ROOT = os.environ.get("GC2026_ROOT", "").strip()
@@ -22,6 +23,8 @@ DEFAULT_SOURCES: Dict[str, str] = {
     "superpc_submission": "output/submission_candidate",
     "pdlts_light": "output/pdlts_val565/light",
     "pdlts_heavy": "output/pdlts_val565/heavy",
+    "pdlts_finetune_uvg": "output/pdlts_finetune_uvg/val565/light",
+    "superpc_uvg_pipeline": "output/superpc_uvg_pipeline/val565",
 }
 
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-19T23:20:49.283057Z",
+  "generated_at": "2026-06-21T08:27:59.944325Z",
   "primary_track": "Full Pipeline",
   "fallback_track": "Enhancement Only",
   "checkpoints": [
@@ -21,162 +21,71 @@
     }
   ],
   "outputs": {
-    "BlueSpeech_enhanced": {
-      "ply_count": 169,
-      "path": "/root/autodl-tmp/GC2026/output/BlueSpeech_enhanced"
-    },
-    "BlueSpeech_smoothed": {
-      "ply_count": 169,
-      "path": "/root/autodl-tmp/GC2026/output/BlueSpeech_smoothed"
-    },
-    "all_sequences_enhanced": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/all_sequences_enhanced"
-    },
-    "all_sequences_smoothed": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/all_sequences_smoothed"
-    },
-    "all_sequences_official": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/all_sequences_official"
-    },
-    "all_sequences_official_smoothed": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/all_sequences_official_smoothed"
-    },
     "submission_candidate": {
       "ply_count": 2155,
       "path": "/root/autodl-tmp/GC2026/output/submission_candidate"
     },
-    "full_pipeline_candidate": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_candidate"
+    "full_pipeline_n0_v2_candidate": {
+      "ply_count": 2243,
+      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_n0_v2_candidate"
     },
-    "full_pipeline_val_candidate": {
-      "ply_count": 362,
-      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_val_candidate"
-    },
-    "full_pipeline_val_cg": {
-      "ply_count": 362,
-      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_val_cg"
-    },
-    "full_pipeline_cg": {
-      "ply_count": 2155,
-      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_cg"
+    "full_pipeline_n0_v2_cg": {
+      "ply_count": 2243,
+      "path": "/root/autodl-tmp/GC2026/output/full_pipeline_n0_v2_cg"
     },
     "val_grid": {
-      "ply_count": 362,
+      "ply_count": 0,
       "path": "/root/autodl-tmp/GC2026/output/val_grid"
     }
   },
   "evaluations": {
-    "baselines/val_cg_baseline_n20k.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/baselines/val_cg_as_enh",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 85.80791184651918,
-      "mean_enh_cd_l1": 85.96053790519251,
-      "mean_improvement_cd_l1": -0.15262605867333434,
-      "created_at": "2026-06-14T06:28:39.919637Z"
-    },
-    "baselines/comparison.json": [
-      {
-        "file": "val_cg_baseline_n20k.json",
-        "label": "cg_baseline",
-        "mean_cg_cd_l1": 85.80791184651918,
-        "mean_enh_cd_l1": 85.96053790519251,
-        "improvement": -0.15262605867333434,
-        "num_evaluated": 362
-      },
-      {
-        "file": "val_official_kitti360_model_n20k.json",
-        "label": "official_kitti360_model",
-        "mean_cg_cd_l1": 85.95154601039148,
-        "mean_enh_cd_l1": 97.92390911882094,
-        "improvement": -11.972363108429462,
-        "num_evaluated": 362
-      },
-      {
-        "file": "val_smoke_random_init_n20k.json",
-        "label": "smoke_random_init",
-        "mean_cg_cd_l1": 86.05204949984893,
-        "mean_enh_cd_l1": 86.71615210685941,
-        "improvement": -0.6641026070104772,
-        "num_evaluated": 362
-      }
-    ],
-    "all_sequences_official/evaluation_val_n20k.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/all_sequences_official",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 85.95154601039148,
-      "mean_enh_cd_l1": 97.92390911882094,
-      "mean_improvement_cd_l1": -11.972363108429462,
-      "created_at": "2026-06-14T06:04:04.343803Z"
-    },
-    "all_sequences_official/evaluation_val_summary.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/all_sequences_official",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 93.92009429510126,
-      "mean_enh_cd_l1": 106.7429250854155,
-      "mean_improvement_cd_l1": -12.822830790314228,
-      "created_at": "2026-06-14T05:35:07.895454Z"
-    },
-    "all_sequences_enhanced/evaluation_val_summary.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/all_sequences_enhanced",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 93.78366997271675,
-      "mean_enh_cd_l1": 91.8877103251484,
-      "mean_improvement_cd_l1": 1.895959647568347,
-      "created_at": "2026-06-13T20:31:57.362959Z"
-    },
-    "submission_candidate/evaluation_val_n20k.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_cgv2.txt",
+    "submission_candidate/evaluation_official_val_n20k.json": {
+      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_official_cgv2.txt",
       "enhanced_root": "/root/autodl-tmp/GC2026/output/submission_candidate",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 85.94837062844421,
-      "mean_enh_cd_l1": 71.48834211794406,
-      "mean_improvement_cd_l1": 14.460028510500152,
-      "mean_cg_accuracy_l1": 76.12174187707626,
-      "mean_enh_accuracy_l1": 77.60486579835809,
-      "mean_cg_completeness_l1": 95.77499937981217,
-      "mean_enh_completeness_l1": 65.37181843753001,
-      "mean_accuracy_l1": 77.60486579835809,
-      "mean_completeness_l1": 65.37181843753001,
-      "created_at": "2026-06-18T13:50:43.221368Z"
+      "num_evaluated": 564,
+      "mean_cg_cd_l1": 51.266430398572396,
+      "mean_enh_cd_l1": 48.508315523244704,
+      "mean_improvement_cd_l1": 2.758114875327692,
+      "mean_cg_accuracy_l1": 46.59151206726954,
+      "mean_enh_accuracy_l1": 53.72606212689317,
+      "mean_cg_completeness_l1": 55.94134872987525,
+      "mean_enh_completeness_l1": 43.29056891959623,
+      "mean_accuracy_l1": 53.72606212689317,
+      "mean_completeness_l1": 43.29056891959623,
+      "created_at": "2026-06-20T16:35:00.561263Z"
     },
-    "full_pipeline_candidate/evaluation_val_n20k.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_cgv2.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/full_pipeline_candidate",
-      "num_evaluated": 362,
-      "mean_cg_cd_l1": 85.90895866509577,
-      "mean_enh_cd_l1": 351.05693646072115,
-      "mean_improvement_cd_l1": -265.14797779562537,
-      "mean_cg_accuracy_l1": 76.12090195714417,
-      "mean_enh_accuracy_l1": 376.70217113296155,
-      "mean_cg_completeness_l1": 95.69701537304736,
-      "mean_enh_completeness_l1": 325.4117017884806,
-      "mean_accuracy_l1": 376.70217113296155,
-      "mean_completeness_l1": 325.4117017884806,
-      "created_at": "2026-06-19T20:59:34.915951Z"
+    "full_pipeline_n0_v2_candidate/evaluation_official_val_n20k.json": {
+      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_official_cgv2.txt",
+      "enhanced_root": "/root/autodl-tmp/GC2026/output/full_pipeline_n0_v2_candidate",
+      "num_evaluated": 564,
+      "mean_cg_cd_l1": 55.083677890719486,
+      "mean_enh_cd_l1": 158.73987750760926,
+      "mean_improvement_cd_l1": -103.65619961688978,
+      "mean_cg_accuracy_l1": 48.831619193167164,
+      "mean_enh_accuracy_l1": 165.7966809518155,
+      "mean_cg_completeness_l1": 61.33573658827181,
+      "mean_enh_completeness_l1": 151.68307406340304,
+      "mean_accuracy_l1": 165.7966809518155,
+      "mean_completeness_l1": 151.68307406340304,
+      "created_at": "2026-06-21T08:09:04.539427Z"
     },
-    "full_pipeline_val_candidate/evaluation_val_n20k.json": {
-      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_cgv2.txt",
-      "enhanced_root": "/root/autodl-tmp/GC2026/output/full_pipeline_val_candidate",
-      "num_evaluated": 0,
-      "mean_cg_cd_l1": null,
-      "mean_enh_cd_l1": null,
-      "mean_improvement_cd_l1": null,
-      "mean_cg_accuracy_l1": null,
-      "mean_enh_accuracy_l1": null,
-      "mean_cg_completeness_l1": null,
-      "mean_enh_completeness_l1": null,
-      "mean_accuracy_l1": null,
-      "mean_completeness_l1": null,
-      "created_at": "2026-06-18T06:10:59.768477Z"
+    "full_pipeline_n0_v2_candidate/evaluation_official_metric_val565.json": {
+      "metric_repo": "/root/autodl-tmp/GC2026/code/Metric",
+      "eval_mode": "subsampled_official_metrics",
+      "pairs_file": "/root/autodl-tmp/GC2026/data/processed/val_pairs_official_cgv2.txt",
+      "enhanced_root": "/root/autodl-tmp/GC2026/output/full_pipeline_n0_v2_candidate",
+      "max_points": 20000,
+      "thresholds_mm": [
+        5,
+        10,
+        20
+      ],
+      "num_evaluated": 564,
+      "mean_enh_chamfer-L1": 374.19671293261007,
+      "note": "chamfer-L1 = Acc+Comp (official); compare evaluate_uvg cd_l1 ≈ chamferL2_old",
+      "created_at": "2026-06-20T17:11:10.503289Z",
+      "mean_cg_chamfer-L1": 102.50567234035637,
+      "mean_improvement_cg_minus_enh": -271.69104059225367
     },
     "val_grid/summary.json": [
       {

@@ -26,11 +26,12 @@ from scipy.spatial import cKDTree
 from tqdm import tqdm
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-GC2026_ROOT = os.path.dirname(SCRIPT_DIR)
+sys.path.insert(0, SCRIPT_DIR)
+from gc2026_paths import resolve_gc2026_root  # noqa: E402
+
+GC2026_ROOT = resolve_gc2026_root(SCRIPT_DIR)
 METRIC_MATRICES = os.path.join(GC2026_ROOT, "code", "Metric", "matrices")
 DEFAULT_THRESHOLDS = (10.0, 20.0, 30.0, 50.0)
-
-sys.path.insert(0, SCRIPT_DIR)
 from evaluate_uvg import enh_path_from_cg  # noqa: E402
 from uvg_io import cg_to_he_path, parse_frame_id, read_ply_xyz  # noqa: E402
 

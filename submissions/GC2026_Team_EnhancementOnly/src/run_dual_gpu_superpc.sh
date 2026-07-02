@@ -20,7 +20,7 @@ for i in $(seq 0 $((NUM_GPUS - 1))); do
   CUDA_VISIBLE_DEVICES=$gpu "$PYTHON" "${SRC_DIR}/run_superpc_infer.py" \
     --cg-list "$list" --out-dir "$GEOMETRY_SECONDARY_DIR" \
     --ckpt-path "${SUPERPC_CKPT}" --output-mode blend_cg --blend-voxel-mm 3.0 \
-    --use-vision-conditioning=false --skip-existing &
+    --skip-existing &
   pids+=($!)
 done
 for pid in "${pids[@]}"; do wait "$pid"; done

@@ -1,5 +1,11 @@
 # GC2026 Team — Enhancement Only (frame_gate v2 hybrid)
 
+## Team Name
+GC2026 Team
+
+## Team Members
+*(Update before official PR — name, affiliation)*
+
 ## Algorithm Name
 UVG-finetuned PD-LTS light + frame-level SuperPC fill gate v2 (`holefill_adaptive_frame_gate_v2`)
 
@@ -30,3 +36,9 @@ Smoke: `bash src/run_smoke.sh`
 | CG baseline | 17.552 |
 
 See `config/gate_decision.json` for full refine preset.
+
+## Hardware
+NVIDIA GPU with CUDA (tested: RTX 5090, 32GB VRAM). Dual-GPU optional via `NUM_GPUS`.
+
+## Runtime
+~48 s/frame PD-LTS + SuperPC + refine (RTX 5090). Full 2155 frames: see `runtime.log` after `post_submission_candidate.sh`.

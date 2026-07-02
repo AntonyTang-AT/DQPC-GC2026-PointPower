@@ -1,0 +1,26 @@
+{
+  "sequence": "TrumanShow",
+  "view_rotated_ccw90": true,
+  "he_viz": "full_only_no_zoom",
+  "alignment": "CG+models: align_cg(); HE: raw (gc_baseline eval convention)",
+  "elev_azim": [
+    16.0,
+    -72.0
+  ],
+  "scatter_s": {
+    "full": 0.1,
+    "zoom": 2.4,
+    "he_zoom": 1.35
+  },
+  "figsize_in": [
+    14.0,
+    8.5
+  ],
+  "chamfer_mm": {
+    "cg": 23.686575613805918,
+    "superpc": 24.85117824368742,
+    "pdlts_frozen": 23.52394981665425,
+    "fusion_ft": 19.43169523665853
+  },
+  "he_zoom_points": 3058
+}

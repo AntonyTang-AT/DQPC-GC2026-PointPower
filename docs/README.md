@@ -2,7 +2,7 @@
 
 | 文档 | 读者 | 内容 |
 |------|------|------|
-| [`../AGENTS.md`](../AGENTS.md) | **Cursor Agent** | 项目目标、完成度、环境、常用命令、行为约定 |
+| [`../AGENTS.md`](../AGENTS.md) | **Cursor Agent / 接手** | 项目目标、**§2 目录结构（output 分类 / 按任务导航）**、环境、常用命令 |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Agent / 开发者 | 双 Track 架构、数据流、Stage1/2、评估与提交 |
 | [`INTEGRITY.md`](INTEGRITY.md) | 迁移 / 验收 | 完整性检查项说明与手动命令 |
 | [`MIGRATION.md`](MIGRATION.md) | 运维 | 新服务器 rsync、bootstrap、验收标准 |

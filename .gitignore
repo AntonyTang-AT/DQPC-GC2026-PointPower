@@ -1,7 +1,6 @@
 # Dataset and large artifacts (download separately)
 data/
 models/
-!submissions/GC2026_Team_EnhancementOnly/models/
 !submissions/GC2026_Team_EnhancementOnly/models/*.ckpt
 code/
 

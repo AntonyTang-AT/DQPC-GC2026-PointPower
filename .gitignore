@@ -1,8 +1,16 @@
-# Dataset and large artifacts (download separately)
-data/
-models/
-!submissions/GC2026_Team_EnhancementOnly/models/*.ckpt
-code/
+# Workspace dataset / upstream clones (not submission package data/)
+/data/
+/models/
+/code/
+
+# Submission package checkpoints (small ckpt + README only; kitti360 via download_pretrained.sh)
+!submissions/**/models/
+!submissions/**/models/**
+submissions/**/models/kitti360_com.pth
+
+# Submission package data/ (pair lists, split markers docs)
+!submissions/**/data/
+!submissions/**/data/**
 
 # Secrets / tokens — never commit
 .env
@@ -10,12 +18,18 @@ code/
 *_token*
 *.credentials
 
-# Large local outputs (keep small reports only)
-output/
+# Large local outputs (keep small reports + selected evidence JSON)
+/output/
 !output/status_report.md
 !output/status_report.json
 !output/val_grid/gate_decision.json
 !output/CHALLENGE_ROOT_CAUSE_ANALYSIS.md
+!output/enh_refine_p0_p1_p2/gate_decision.json
+!output/enh_refine_p0_p1_p2/summary_val565.json
+!output/ft_val565_fusion/param_review.json
+!output/ft_val565_fusion/lineb_failure_analysis.json
+!output/ft_val565_fusion/holefill_adaptive_frame_gate_v2/
+!output/ft_val565_fusion/holefill_adaptive_frame_gate_v2/evaluation_gc_baseline_val565.json
 
 # Submission tarballs at repo root
 submissions/*.tar.gz
@@ -29,6 +43,7 @@ pointpower_uvg_cwi_dqpc_gc_2026.pdf
 
 # Generated after full 2155 infer (huge frame list; use make_submission.py)
 submissions/GC2026_Team_EnhancementOnly/manifest.json
+submissions/PointPower/manifest.json
 
 # Python / env
 __pycache__/
@@ -37,11 +52,6 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-
-# Secrets
-.env
-*.pem
-*_token*
 
 # IDE
 .cursor/

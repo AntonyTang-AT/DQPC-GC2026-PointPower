@@ -1,0 +1,204 @@
+{
+  "diagnosis": {
+    "primary_failure_mode": "VictoryHeart: post-SOR after tiny SuperPC fill degrades completeness; TrumanShow: large SuperPC fill improves completeness.",
+    "knobs": [
+      "hybrid_max_fill_ratio \u2014 cap SuperPC pts vs primary",
+      "fill_mm / fill_density_scale_max \u2014 tighter CG-hole threshold",
+      "adaptive_post_sor \u2014 skip post-SOR when fill ratio < 2%",
+      "snap_mm=0 \u2014 snap-to-CG does not help on dense ft frames"
+    ],
+    "recommended_presets": [
+      "holefill_lite_fill0.25_max3pct_nopost_snap0",
+      "holefill_lite_fill0.25_max10pct_adaptive_post25"
+    ]
+  },
+  "sequence_summary": {
+    "TrumanShow": {
+      "n": 171,
+      "mean_delta_cd": -0.10804096675178225,
+      "worse_count": 50,
+      "mean_dacc": 0.3761342428983068,
+      "mean_dcomp": -0.5922161764018713
+    },
+    "VictoryHeart": {
+      "n": 197,
+      "mean_delta_cd": 0.6962619957575895,
+      "worse_count": 197,
+      "mean_dacc": 0.07456523112089397,
+      "mean_dcomp": 1.3179587603942842
+    },
+    "VirtualLife": {
+      "n": 196,
+      "mean_delta_cd": 0.1889853507801417,
+      "worse_count": 180,
+      "mean_dacc": 0.5610662724714722,
+      "mean_dcomp": -0.1830955709111886
+    }
+  },
+  "top10_worse": [
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0170.ply",
+      "delta_cd": 1.109850799112122,
+      "dacc": 0.09784325324208965,
+      "dcomp": 2.121858344982156,
+      "ft_cd": 13.472850519939104,
+      "line_b_cd": 14.582701319051226
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0041.ply",
+      "delta_cd": 1.0102749892763825,
+      "dacc": 0.03874450738513069,
+      "dcomp": 1.9818054711676343,
+      "ft_cd": 13.175080690827233,
+      "line_b_cd": 14.185355680103616
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0046.ply",
+      "delta_cd": 1.0049645153357734,
+      "dacc": 0.025000088829330025,
+      "dcomp": 1.9849289418422185,
+      "ft_cd": 13.763632688492072,
+      "line_b_cd": 14.768597203827845
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0020.ply",
+      "delta_cd": 0.9868602901703394,
+      "dacc": 0.04239871537194517,
+      "dcomp": 1.9313218649687354,
+      "ft_cd": 13.70514537394745,
+      "line_b_cd": 14.69200566411779
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0120.ply",
+      "delta_cd": 0.9757524641992283,
+      "dacc": 0.03350282865463683,
+      "dcomp": 1.9180020997438216,
+      "ft_cd": 14.718755166517212,
+      "line_b_cd": 15.69450763071644
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0169.ply",
+      "delta_cd": 0.9694707803501466,
+      "dacc": 0.1640876668884701,
+      "dcomp": 1.7748538938118248,
+      "ft_cd": 13.903695584242538,
+      "line_b_cd": 14.873166364592684
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0193.ply",
+      "delta_cd": 0.9677923592682323,
+      "dacc": 0.13145079689318706,
+      "dcomp": 1.8041339216432757,
+      "ft_cd": 13.090640070737521,
+      "line_b_cd": 14.058432430005753
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0006.ply",
+      "delta_cd": 0.9614532293608669,
+      "dacc": 0.08149270702238987,
+      "dcomp": 1.8414137516993438,
+      "ft_cd": 13.498752245048728,
+      "line_b_cd": 14.460205474409594
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0186.ply",
+      "delta_cd": 0.954741917901023,
+      "dacc": -0.08023952967503512,
+      "dcomp": 1.9897233654770812,
+      "ft_cd": 13.531663023075575,
+      "line_b_cd": 14.486404940976598
+    },
+    {
+      "cg": "VictoryHeart_UVG-CWI-DQPC_CG_15_0_196_0125.ply",
+      "delta_cd": 0.9366738555761565,
+      "dacc": 0.13194748692060543,
+      "dcomp": 1.7414002242317093,
+      "ft_cd": 13.960316495206051,
+      "line_b_cd": 14.896990350782207
+    }
+  ],
+  "top10_better": [
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0072.ply",
+      "delta_cd": -0.8281738656628512,
+      "dacc": 0.18964684133618803,
+      "dcomp": -1.8459945726618905,
+      "ft_cd": 20.706474267462177,
+      "line_b_cd": 19.878300401799326
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0073.ply",
+      "delta_cd": -0.8046332206308726,
+      "dacc": 0.1419353426746781,
+      "dcomp": -1.7512017839364251,
+      "ft_cd": 19.732780439958034,
+      "line_b_cd": 18.928147219327162
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0071.ply",
+      "delta_cd": -0.7741912243050315,
+      "dacc": 0.21506207543450984,
+      "dcomp": -1.7634445240445729,
+      "ft_cd": 21.66186725067392,
+      "line_b_cd": 20.88767602636889
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0074.ply",
+      "delta_cd": -0.6336674850469741,
+      "dacc": 0.12133189955403978,
+      "dcomp": -1.3886668696479845,
+      "ft_cd": 19.225582558771563,
+      "line_b_cd": 18.59191507372459
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0070.ply",
+      "delta_cd": -0.6154394528675375,
+      "dacc": 0.1993643246644936,
+      "dcomp": -1.4302432303995687,
+      "ft_cd": 20.753311359998833,
+      "line_b_cd": 20.137871907131295
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0078.ply",
+      "delta_cd": -0.6148221508456899,
+      "dacc": 0.1172252844255155,
+      "dcomp": -1.3468695861168918,
+      "ft_cd": 17.69318422266834,
+      "line_b_cd": 17.07836207182265
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0079.ply",
+      "delta_cd": -0.6104226904258319,
+      "dacc": 0.20772243178967642,
+      "dcomp": -1.4285678126413366,
+      "ft_cd": 17.486600283604638,
+      "line_b_cd": 16.876177593178806
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0077.ply",
+      "delta_cd": -0.6086698687674108,
+      "dacc": 0.21071963534221183,
+      "dcomp": -1.4280593728770352,
+      "ft_cd": 18.052051501329796,
+      "line_b_cd": 17.443381632562385
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0080.ply",
+      "delta_cd": -0.5970837143392878,
+      "dacc": 0.1064031396112739,
+      "dcomp": -1.3005705682898512,
+      "ft_cd": 17.45849760683018,
+      "line_b_cd": 16.86141389249089
+    },
+    {
+      "cg": "TrumanShow_UVG-CWI-DQPC_CG_15_0_170_0068.ply",
+      "delta_cd": -0.590141173977571,
+      "dacc": 0.35385922888211496,
+      "dcomp": -1.534141576837257,
+      "ft_cd": 19.432509255690583,
+      "line_b_cd": 18.842368081713012
+    }
+  ],
+  "frames_worse_accuracy": 468,
+  "frames_worse_completeness": 250
+}

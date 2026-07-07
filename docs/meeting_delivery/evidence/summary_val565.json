@@ -1,0 +1,42 @@
+[
+  {
+    "experiment": "pdlts_light_snap1_fill0.6_density",
+    "mean_enh_chamfer_distance": 17.50391089087027,
+    "improvement_cg_minus_enh": 0.04764235583777321
+  },
+  {
+    "experiment": "pdlts_light_snap1_fill0.6_combined",
+    "mean_enh_chamfer_distance": 17.503912574637106,
+    "improvement_cg_minus_enh": 0.04764067207093703
+  },
+  {
+    "experiment": "p0_perseq",
+    "mean_enh_chamfer_distance": 17.506321843229284,
+    "improvement_cg_minus_enh": 0.04523140347875909
+  },
+  {
+    "experiment": "pdlts_light_snap1_fill0.6_bidir",
+    "mean_enh_chamfer_distance": 17.506323601461315,
+    "improvement_cg_minus_enh": 0.04522964524672801
+  },
+  {
+    "experiment": "p0_perseq_rollback",
+    "mean_enh_chamfer_distance": 17.507548091203944,
+    "improvement_cg_minus_enh": 0.04400515550409878
+  },
+  {
+    "experiment": "pdlts_light_snap1_adapt",
+    "mean_enh_chamfer_distance": 17.507548091203944,
+    "improvement_cg_minus_enh": 0.04400515550409878
+  },
+  {
+    "experiment": "pdlts_light_snap1_fill0.6_post25",
+    "mean_enh_chamfer_distance": 17.916682197869267,
+    "improvement_cg_minus_enh": -0.3651289511612248
+  },
+  {
+    "experiment": "p1_pdlts_heavy_snap1_fill0.6",
+    "mean_enh_chamfer_distance": 17.953732749645944,
+    "improvement_cg_minus_enh": -0.4021795029379014
+  }
+]

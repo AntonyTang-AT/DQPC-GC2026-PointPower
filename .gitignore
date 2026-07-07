@@ -19,6 +19,13 @@ output/
 
 # Submission tarballs at repo root
 submissions/*.tar.gz
+*.zip
+
+# Large local artifacts
+pointpower_uvg_cwi_dqpc_gc_2026.pdf
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
 
 # Generated after full 2155 infer (huge frame list; use make_submission.py)
 submissions/GC2026_Team_EnhancementOnly/manifest.json

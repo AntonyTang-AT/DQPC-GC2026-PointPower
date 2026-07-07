@@ -32,7 +32,19 @@ copy_py \
   split_pending_cg_list.py \
   make_submission.py \
   write_runtime_summary.py \
-  evaluate_gc_baseline_metrics.py
+  evaluate_gc_baseline_metrics.py \
+  evaluate_uvg.py \
+  enh_temporal.py \
+  enh_temporal_attention.py \
+  enh_temporal_region.py \
+  run_pdlts_finetune_uvg.py \
+  pdlts_uvg_train_dataset.py
+
+for sh in run_pdlts_finetune_uvg.sh setup_pdlts_train.sh download_metric.sh install_finetuned_ckpt.sh; do
+  cp -f "${SCRIPT_DIR}/${sh}" "${ENH_DIR}/src/" 2>/dev/null || cp -f "${ENH_DIR}/src/${sh}" "${ENH_DIR}/src/" 2>/dev/null || true
+  [[ -f "${ENH_DIR}/src/${sh}" ]] || cp -f "${GC2026_ROOT}/submissions/GC2026_Team_EnhancementOnly/src/${sh}" "${ENH_DIR}/src/"
+  chmod +x "${ENH_DIR}/src/${sh}"
+done
 
 for f in all_cg_only_cgv2.txt val_cg_only_official_cgv2.txt val_pairs_official_cgv2.txt \
   all_pairs_cgv2.txt train_pairs_official_cgv2.txt; do
@@ -69,42 +81,9 @@ else
   echo "[build_frame_gate_v2] WARN: no finetune ckpt at FINETUNE_CKPT_SRC" >&2
 fi
 
-cat > "${ENH_DIR}/src/common.sh" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUBMISSION_ROOT="$(cd "${SRC_DIR}/.." && pwd)"
-
-if [[ -z "${GC2026_ROOT:-}" ]]; then
-  if [[ -d "${SUBMISSION_ROOT}/../data" ]]; then
-    GC2026_ROOT="$(cd "${SUBMISSION_ROOT}/.." && pwd)"
-  elif [[ -d "${SUBMISSION_ROOT}/../../data" ]]; then
-    GC2026_ROOT="$(cd "${SUBMISSION_ROOT}/../.." && pwd)"
-  else
-    GC2026_ROOT="$(cd "${SUBMISSION_ROOT}/.." && pwd)"
-  fi
-fi
-export GC2026_ROOT SUBMISSION_ROOT SRC_DIR
-export PDLTS_ROOT="${PDLTS_ROOT:-${GC2026_ROOT}/code/PD-LTS}"
-export SUPERPC_ROOT="${SUPERPC_ROOT:-${GC2026_ROOT}/code/SuperPC}"
-export SCRIPT_DIR="${SRC_DIR}"
-export PY="${PY:-python3}"
-export PDLTS_FINETUNE_CKPT="${PDLTS_FINETUNE_CKPT:-${SUBMISSION_ROOT}/models/DenoiseFlow-light-UVG-finetune.ckpt}"
-export SUPERPC_CKPT="${SUPERPC_CKPT:-${GC2026_ROOT}/models/superpc_pretrained/kitti360_com.pth}"
-
-if [[ -f "${SRC_DIR}/env_setup.sh" ]] && [[ "${SUBMISSION_SKIP_CONDA:-0}" != "1" ]]; then
-  if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
-    source "${HOME}/miniconda3/etc/profile.d/conda.sh"
-    conda activate superpc 2>/dev/null || true
-    export PATH="${CONDA_PREFIX:-}/bin:${PATH}"
-    export PYTHON="${CONDA_PREFIX:-}/bin/python3.9"
-  fi
-fi
-
-export PYTHON="${PYTHON:-python3}"
-export UVG_VAL_PAIRS_FILE="${UVG_VAL_PAIRS_FILE:-${GC2026_ROOT}/data/processed/val_pairs_official_cgv2.txt}"
-EOF
+cp -f "${ENH_DIR}/src/common.sh" "${ENH_DIR}/src/common.sh.bak" 2>/dev/null || true
+cp -f "${GC2026_ROOT}/submissions/GC2026_Team_EnhancementOnly/src/common.sh" "${ENH_DIR}/src/common.sh" 2>/dev/null || \
+  cp -f "${SCRIPT_DIR}/../submissions/GC2026_Team_EnhancementOnly/src/common.sh" "${ENH_DIR}/src/common.sh"
 chmod +x "${ENH_DIR}/src/common.sh"
 
 cat > "${ENH_DIR}/src/env_setup.sh" <<'EOF'
@@ -226,7 +205,7 @@ for i in $(seq 0 $((NUM_GPUS - 1))); do
   CUDA_VISIBLE_DEVICES=$gpu "$PYTHON" "${SRC_DIR}/run_superpc_infer.py" \
     --cg-list "$list" --out-dir "$GEOMETRY_SECONDARY_DIR" \
     --ckpt-path "${SUPERPC_CKPT}" --output-mode blend_cg --blend-voxel-mm 3.0 \
-    --use-vision-conditioning=false --skip-existing &
+    --skip-existing &
   pids+=($!)
 done
 for pid in "${pids[@]}"; do wait "$pid"; done
@@ -360,6 +339,12 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 bash src/setup_pdlts_deps.sh
 ```
 
+### 3b. Optional: PD-LTS fine-tune dependencies
+
+```bash
+bash src/setup_pdlts_train.sh
+```
+
 Preset: `holefill_adaptive_frame_gate_v2` in `config/gate_config.json`.
 EOF
 
@@ -387,6 +372,16 @@ bash src/run.sh
 Output: `$GC2026_ROOT/output/submission_candidate_frame_gate_v2/` (2155 ENH PLY).
 
 Smoke: `bash src/run_smoke.sh`
+
+### Training (optional — reproduce PD-LTS UVG fine-tune)
+
+The submission includes a fine-tuned checkpoint (`models/DenoiseFlow-light-UVG-finetune.ckpt`).
+To re-run fine-tuning on the UVG train split:
+
+```bash
+bash src/setup_pdlts_train.sh                          # one-time deps
+GPUS=4 bash src/run_pdlts_finetune_uvg.sh train         # full training (20 epochs)
+```
 
 ## Local validation (gc_baseline val565, 564 frames)
 | Method | Chamfer (mm) |

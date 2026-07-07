@@ -18,6 +18,7 @@
 - **汇总**： [metrics/models_registry.json](metrics/models_registry.json) · [metrics/summary.json](metrics/summary.json)
 - **Excel**：[val565_five_models.xlsx](val565_five_models.xlsx)
 - **完整报告**：[REPORT.md](REPORT.md)
+- **Highlight / 贡献点**：[HIGHLIGHTS.md](HIGHLIGHTS.md)（对照 denoise / complete / upsample 叙事）
 - **提交 gate**：[config/submission_gate.json](config/submission_gate.json)
 
 ## 配图
@@ -25,9 +26,15 @@
 | 文件 | 说明 |
 |------|------|
 | [figures/bar_val565_five_models.png](figures/bar_val565_five_models.png) | 五主线 + CG 分序列柱状图 |
-| [figures/diagram_pipeline_pdlts_density.png](figures/diagram_pipeline_pdlts_density.png) | 管线示意 |
-| [figures/compare_ts0072.png](figures/compare_ts0072.png) | TrumanShow 稀疏帧对比 |
-| [figures/compare_vh0041.png](figures/compare_vh0041.png) | VictoryHeart 典型帧对比 |
+| [figures/diagram_pipeline_pdlts_density.png](figures/diagram_pipeline_pdlts_density.png) | 简化管线示意 |
+| [figures/diagram_model_framework.png](figures/diagram_model_framework.png) | **提交模型框架图**（仅 frame_gate v2） |
+| [HIGHLIGHTS.md](HIGHLIGHTS.md) | 工作 highlight（对照三子任务文献表述） |
+| `figures/compare3_cols_*.png` | **CG + SuperPC / PD-LTS / Ours + HE**（5 列，上全下局部） |
+| [HYPERPARAMETERS.md](HYPERPARAMETERS.md) | epoch / batch / refine 超参表 |
+| [HE_ROI_ANALYSIS.md](HE_ROI_ANALYSIS.md) | 配图 HE 红框错位根因与修复说明 |
+| [REPORT.md §4](REPORT.md#4-最优提交路线详解回答先填充再去噪) | 最优路线与 fill/denoise 顺序 |
+
+重新生成：`bash scripts/run_meeting_delivery_figures.sh`
 
 ## 提交包
 

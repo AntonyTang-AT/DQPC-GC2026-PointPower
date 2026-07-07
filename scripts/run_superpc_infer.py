@@ -19,9 +19,11 @@ import torch
 from tqdm import tqdm
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-GC2026_ROOT = os.path.dirname(SCRIPT_DIR)
-SUPERPC_ROOT = os.path.join(GC2026_ROOT, "code", "SuperPC")
 sys.path.insert(0, SCRIPT_DIR)
+from gc2026_paths import resolve_gc2026_root  # noqa: E402
+
+GC2026_ROOT = resolve_gc2026_root(SCRIPT_DIR)
+SUPERPC_ROOT = os.environ.get("SUPERPC_ROOT", "").strip() or os.path.join(GC2026_ROOT, "code", "SuperPC")
 sys.path.insert(0, SUPERPC_ROOT)
 os.chdir(SUPERPC_ROOT)
 

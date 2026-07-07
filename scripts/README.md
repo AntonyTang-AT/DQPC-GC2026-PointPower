@@ -1,6 +1,6 @@
 # GC2026 UVG Pipeline Scripts
 
-**Agent / 新服务器**：先读 [`../AGENTS.md`](../AGENTS.md)，再跑 `bash scripts/check_integrity.sh`。
+**Agent / 新服务器**：先读 [`../AGENTS.md`](../AGENTS.md)（**§2 目录结构 / output 分类 / 按任务导航**），再跑 `bash scripts/check_integrity.sh`。
 
 ## N0 v2 Full Pipeline（当前生产）
 

@@ -1,6 +1,17 @@
 {
+  "checked_at": "2026-07-01T09:44:32.804784Z",
+  "package": "/root/autodl-tmp/GC2026/submissions/GC2026_Team_EnhancementOnly",
   "passed": true,
-  "package": "submissions/GC2026_Team_EnhancementOnly",
-  "smoke_frames": 2,
+  "preset": "holefill_adaptive_frame_gate_v2",
+  "smoke": "2 frames: PD-LTS + SuperPC + frame_gate v2 refine -> 6 PLY",
+  "fixes_applied": [
+    "run_superpc_infer.py GC2026_ROOT via gc2026_paths",
+    "run_dual_gpu_superpc.sh vision flag removed",
+    "enh_temporal*.py bundled",
+    "evaluate_gc_baseline_metrics.py GC2026_ROOT fix",
+    "README Team/Hardware/Runtime sections",
+    "stale manifest.json removed from package (regenerate via post_submission_candidate.sh)"
+  ],
+  "tar": "output/GC2026_submission_EnhancementOnly_frame_gate_v2.tar.gz",
   "log": "output/meeting_delivery/submission_verify.log"
 }

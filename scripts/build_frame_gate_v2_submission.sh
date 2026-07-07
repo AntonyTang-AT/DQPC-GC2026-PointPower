@@ -27,6 +27,9 @@ copy_py \
   enh_refine_config.py \
   enh_refine_pipeline.py \
   frame_fill_gate.py \
+  enh_temporal.py \
+  enh_temporal_attention.py \
+  enh_temporal_region.py \
   enh_geometry_sources.py \
   uvg_io.py \
   split_pending_cg_list.py \
@@ -351,6 +354,12 @@ EOF
 cat > "${ENH_DIR}/README.md" <<'EOF'
 # GC2026 Team — Enhancement Only (frame_gate v2 hybrid)
 
+## Team Name
+GC2026 Team
+
+## Team Members
+*(Update before official PR — name, affiliation)*
+
 ## Algorithm Name
 UVG-finetuned PD-LTS light + frame-level SuperPC fill gate v2 (`holefill_adaptive_frame_gate_v2`)
 
@@ -391,6 +400,12 @@ GPUS=4 bash src/run_pdlts_finetune_uvg.sh train         # full training (20 epoc
 | CG baseline | 17.552 |
 
 See `config/gate_decision.json` for full refine preset.
+
+## Hardware
+NVIDIA GPU with CUDA (tested: RTX 5090, 32GB VRAM). Dual-GPU optional via `NUM_GPUS`.
+
+## Runtime
+~48 s/frame PD-LTS + SuperPC + refine (RTX 5090). Full 2155 frames: see `runtime.log` after `post_submission_candidate.sh`.
 EOF
 
 while IFS= read -r -d '' f; do python3 -m py_compile "$f"; done < <(find "${ENH_DIR}/src" -name '*.py' -print0)

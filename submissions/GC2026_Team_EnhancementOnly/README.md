@@ -13,6 +13,12 @@ PointPower
 - Yaonan Wang (yaonan@hnu.edu.cn) — Hunan University
 - Wenming Zheng (wenming_zheng@seu.edu.cn) — Southeast University
 
+## Team Name
+GC2026 Team
+
+## Team Members
+*(Update before official PR — name, affiliation)*
+
 ## Algorithm Name
 PointPower
 

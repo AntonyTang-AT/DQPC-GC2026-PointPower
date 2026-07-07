@@ -76,11 +76,13 @@ if [[ -f "$CKPT" ]] && [[ -f "$SUB/src/verify_pdlts_ckpt.py" ]]; then
 fi
 
 GATE_NAME=$(python3 -c "import json; g=json.load(open('$SUB/config/gate_decision.json')); print(g.get('production_config',g.get('best_config',{})).get('name',''))" 2>/dev/null || echo "")
-if [[ "$GATE_NAME" == *"pdlts_light_snap1_fill0.6_density"* ]]; then
-  ok "gate preset pdlts_density"
+if [[ "$GATE_NAME" == "holefill_adaptive_frame_gate_v2" ]]; then
+  ok "gate preset frame_gate_v2"
 else
-  bad "gate preset expected pdlts_light_snap1_fill0.6_density got: $GATE_NAME"
+  bad "gate preset expected holefill_adaptive_frame_gate_v2 got: $GATE_NAME"
 fi
+FT_CKPT="${SUB}/models/DenoiseFlow-light-UVG-finetune.ckpt"
+[[ -f "$FT_CKPT" ]] && ok "bundled UVG finetune ckpt" || bad "missing models/DenoiseFlow-light-UVG-finetune.ckpt"
 
 # --- 6) GPU optional check ---
 if "$PYTHON" -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
@@ -104,6 +106,7 @@ if [[ "$RUN_SMOKE" == "1" ]]; then
   export UVG_CG_VERSION=v2
   export SUBMISSION_SKIP_CONDA=0
   export GEOMETRY_DIR="${SMOKE_OUT}/pdlts_geometry"
+  export GEOMETRY_SECONDARY_DIR="${SMOKE_OUT}/superpc_geometry"
   cd "$SUB"
   if bash src/run.sh; then
     echo "[verify] waiting for PD-LTS workers (max 300s)..."

@@ -80,9 +80,180 @@
 
 ---
 
-## 4. 方法要点（论文 Method）
+## 4. 最优提交路线详解（回答「先填充再去噪？」）
 
-### 4.1 相对 PD-LTS
+**结论（一句话）**：不是「先填洞再去噪网络」；而是 **先用 PD-LTS 神经网络去噪**，再做 **几何 snap/fill**，最后在少数帧 **可选 SuperPC 填洞 + 统计离群点去除（SOR）**。
+
+### 4.1 整体阶段顺序（`holefill_adaptive_frame_gate_v2`）
+
+```text
+官方 CG PLY
+  │
+  ├─[A] PD-LTS light（UVG fine-tune 权重）── 神经网络去噪，得到 primary 几何
+  │
+  ├─[B] Primary density refine（每帧必做，architecture v2）
+  │      ① snap 1.0 mm（把点拉向 CG，保 accuracy）
+  │      ② fill 0.6 mm density-adaptive（在 CG 稀疏区补点，保 completeness）
+  │
+  ├─[C] Frame fill gate（逐帧探测 est_add_ratio）
+  │      skip │ lite │ full ── 决定是否引入 SuperPC secondary
+  │      VH / VL 序列：强制 skip（不加 SuperPC）
+  │
+  ├─[D] 可选 SuperPC 填洞（仅 TrumanShow 等通过 gate 的帧）
+  │      secondary = submission_candidate（kitti360 blend_cg vx=3.0）
+  │      仅在 CG 洞区 merge；fill_before_snap=true → 先填 SuperPC 点再 snap
+  │      lite: fill 0.25 mm / max 10%；full: fill 0.6 mm / max 15%
+  │
+  ├─[E] Post SOR 统计去噪（nb=20, std=2.5）
+  │      adaptive：新增点占比 < 2% 则跳过（避免过度平滑）
+  │
+  └─[F] KNN 颜色从输入 CG 迁移 → 写 ENH PLY
+```
+
+### 4.2 与学长的「填充 / 去噪」对应关系
+
+| 说法 | 本项目的实际含义 |
+|------|------------------|
+| **去噪** | ① **PD-LTS 网络**（主去噪，管线最前）；② **Post SOR**（几何后统计滤波，管线末尾可选） |
+| **填充** | **Density-adaptive fill**（primary 0.6 mm）+ 可选 **SuperPC hole fill**（secondary） |
+| **先填再去噪？** | **神经网络去噪始终在最前**。几何阶段因 preset 而异（见下表） |
+| **为何不用 SuperPC 单线** | gc_baseline 下 SuperPC+filter+snap（18.35 mm）仍劣于 CG（17.55 mm）；SuperPC 仅作 **门控填洞** |
+
+**几何阶段 fill / snap 顺序（可并存，不矛盾）**：
+
+| 管线 | fill_before_snap | 实际顺序 |
+|------|------------------|----------|
+| **线 B：仅 PD-LTS**（sheet4 `vh_snap0`） | false | **snap → fill** |
+| **Fusion 实验 Line B**（`holefill_first_...`） | true | SuperPC 支路：**fill → snap → post SOR** |
+| **提交 primary refine**（frame_gate v2） | —（独立函数） | **snap → fill**（固定） |
+| **提交 SuperPC 支路**（frame_gate v2） | true | **fill → snap** |
+
+> 若学长记忆中的「Line B 填充在前」指的是 **Fusion holefill-first 实验**，那是对的；若指 **仅 PD-LTS 的线 B**，则是 **snap 在前、fill 在后**。详见 [HYPERPARAMETERS.md §5](HYPERPARAMETERS.md#5-line-b-与-fill--snap-顺序易混点)。
+
+### 4.3 配图三模型详解（sheet3 / sheet4 / sheet7）
+
+配图脚本 `scripts/render_three_models_comparison.py` 固定展示 **CG + 下列三模型 + HE** 五列；每列上/下（或左/右）为全景与局部 ROI。局部 ROI 由 **CG 相对 HE 高误差区** 自动选取（故意展示问题区域）；HE 列红框通过 **CG→HE 最近邻对应** 单独圈定，详见 [HE_ROI_ANALYSIS.md](HE_ROI_ANALYSIS.md)。
+
+---
+
+#### 4.3.1 模型 A — SuperPC only（sheet3，val565 CD = **18.353 mm**）
+
+**定位**：纯几何上采样基线，证明在 gc_baseline 口径下 **单跑 SuperPC 打不过 CG**。
+
+**设计动机**：SuperPC 是扩散式点云上采样，擅长补全稀疏区，但会引入与 CG 不一致的几何；本线只用 **几何 filter + snap 锚定**，不加 PD-LTS，作为「无 UVG 域适配神经网络」的对照。
+
+**逐步流程**：
+
+```text
+官方 CG PLY
+  │
+  ├─[1] SuperPC 推理（冻结 kitti360_com.pth）
+  │      use_vision=0（纯几何，不用 RGB）
+  │      2048 输入点 → 8192 输出点，25 扩散步
+  │
+  ├─[2] filter_cg 后处理
+  │      对 SuperPC 输出做 SOR（nb=20, std=2.0）去飞点
+  │      与 CG 合并：保留 CG 点 + 过滤后的 SuperPC 新增点（非 blend 体素）
+  │
+  ├─[3] snap 1.0 mm
+  │      把 ENH 点拉向 CG 最近邻，限制在 1 mm 内，保 accuracy
+  │      本线 **不做 density fill**（Phase2 表明加 fill 不能救回 CD）
+  │
+  └─[4] KNN 颜色从输入 CG 迁移 → ENH PLY
+```
+
+**与 CG 的差异**：SuperPC 会 **增点** 填洞，但 snap 后整体仍偏离 HE（accuracy 侧劣化）；val565 全局 CD **18.353 > CG 17.552**。
+
+**配图数据来源**：`output/meeting_delivery_viz/superpc_filter_cg_geom/`（6 帧 filter_cg 推理缓存）+ snap1。
+
+---
+
+#### 4.3.2 模型 B — PD-LTS 冻结 + 后处理（sheet4 `vh_snap0`，CD = **17.440 mm**）
+
+**定位**：**不 fine-tune** 的 PD-LTS 最优 ablation；说明「仅换后处理超参」也能略优于 CG，但远不如 UVG ft。
+
+**设计动机**：PD-LTS 原文在潜空间去噪；我们在 **欧氏空间** 用 CG 硬锚定（snap/fill），避免去噪后点云漂移。VictoryHeart 序列上 snap 过强会伤 completeness，故 val 最优为 **VH 序列 snap=0**（`vh_snap0`）。
+
+**逐步流程**：
+
+```text
+官方 CG PLY
+  │
+  ├─[1] PD-LTS light 去噪（冻结 Denoiseflow-light-FBM.ckpt）
+  │      Flow Matching 去噪网络，输入 CG 点坐标 → primary 去噪几何
+  │      无 UVG 域适配，权重为通用 FBM 预训练
+  │
+  ├─[2] snap（序列相关）
+  │      TrumanShow / VirtualLife：snap 1.0 mm（拉向 CG）
+  │      VictoryHeart：**snap 0 mm**（仅保留去噪结果，不额外拉点）
+  │
+  ├─[3] density-adaptive fill 0.6 mm
+  │      在 CG 相对 primary 稀疏的区域补点（体素密度对比）
+  │      提升 completeness，CG 原点永不删除
+  │
+  └─[4] KNN 颜色从 CG 迁移 → ENH PLY
+```
+
+**与 SuperPC 线对比**：无 SuperPC 增点；靠 **神经网络去噪 + 几何 refine**。raw PD-LTS  alone 17.854 mm（劣于 CG），**snap/fill 是必要第二步**。
+
+**为何叫 vh_snap0**：全局统一 snap=1 的配置 17.504 mm；VH 上 snap=0 略优 → sheet4 报告 **17.440 mm**（564 帧 val565）。
+
+---
+
+#### 4.3.3 模型 C — 提交线 frame_gate v2（sheet7，CD = **14.870 mm**）
+
+**定位**：当前 **Enhancement Only 提交** preset；ft PD-LTS + 门控 SuperPC 填洞。
+
+**设计动机**：
+1. UVG fine-tune 把 PD-LTS 拉到 **14.883 mm**（无 SuperPC 基线）
+2. Line B 实验证明 SuperPC「先 fill 再 snap」在 **TrumanShow 大洞帧** 有效，但 **VictoryHeart 全序列变差**（15.159 mm > 14.883 mm）
+3. v2 用 **逐帧 gate + VH/VL 序列 skip**，只在「值得填」的帧启用 SuperPC，且 primary 恒做 density refine
+
+**逐步流程**（与 §4.1 一致，此处按配图语义展开）：
+
+```text
+官方 CG PLY
+  │
+  ├─[1] PD-LTS light（UVG fine-tune：DenoiseFlow-light-UVG-finetune.ckpt）
+  │      神经网络去噪 → primary 几何（管线最前，不可与 fill 对调）
+  │
+  ├─[2] Primary density refine（每帧必做，architecture v2）
+  │      ① snap 1.0 mm → ② fill 0.6 mm density-adaptive
+  │      skip 帧也不再输出裸 primary（v1 缺陷已修）
+  │
+  ├─[3] Frame fill gate（逐帧 est_add_ratio）
+  │      探测 CG 洞区相对 primary 的缺失比例
+  │      tier：skip │ lite（fill 0.25, max 10%）│ full（fill 0.6, max 15%）
+  │      VictoryHeart / VirtualLife：**整序列 force skip**（不加 SuperPC）
+  │
+  ├─[4] 可选 SuperPC secondary（仅 gate 通过帧，主要在 TrumanShow）
+  │      secondary = kitti360 blend_cg（vx=3.0 mm）submission 几何
+  │      仅在 CG 洞 mask 内 merge SuperPC 点
+  │      fill_before_snap=true：**先填 SuperPC 点 → 再 snap**（继承 Line B 支路顺序）
+  │
+  ├─[5] Post SOR（nb=20, std=2.5，adaptive：新增点 <2% 则跳过）
+  │
+  └─[6] KNN 颜色从 CG 迁移 → ENH PLY
+```
+
+**相对模型 A/B 的关键差异**：
+
+| 维度 | SuperPC only | PD-LTS frozen | frame_gate v2 |
+|------|--------------|---------------|---------------|
+| 主网络 | SuperPC kitti360 | 冻结 FBM | **UVG ft PD-LTS** |
+| SuperPC | 全程使用 | 不用 | **门控、仅 TS 等** |
+| Primary refine | 仅 snap | snap + fill | **恒 snap + fill** |
+| val565 CD | 18.353 | 17.440 | **14.870** |
+
+**分序列**：TS −0.044 mm vs ft；VH/VL 与纯 ft **完全一致**（0.000 mm Δ）。
+
+完整 preset 字段见 `config/submission_gate.json`；各模型 epoch/batch 见 **[HYPERPARAMETERS.md](HYPERPARAMETERS.md)**；Line B → v2 换模过程见 **[FUSION_EVOLUTION.md](FUSION_EVOLUTION.md)**。
+
+---
+
+## 5. 方法要点（论文 Method）
+
+### 5.1 相对 PD-LTS
 
 \[
 \hat{P}_{\mathrm{ENH}} = \mathcal{R}_\phi\bigl(\mathcal{G}_\theta(P_{\mathrm{CG}}),\, P_{\mathrm{CG}}\bigr)
@@ -92,7 +263,7 @@
 - \(\mathcal{R}_\phi\)：**snap**（accuracy）+ **density-adaptive fill**（completeness），CG 点永不删除
 - 与 PD-LTS 原文差异：在 **欧氏空间** 用 CG 硬锚定，而非仅潜空间去噪
 
-### 4.2 相对 SuperPC
+### 5.2 相对 SuperPC
 
 \[
 \hat{P} = \mathcal{F}_\phi\bigl(\mathcal{G}^{\mathrm{SP}}_\theta(P_{\mathrm{CG}}),\, P_{\mathrm{CG}}\bigr)
@@ -102,7 +273,7 @@
 - \(\mathcal{F}_\phi\)：体素 merge / filter / 区域或帧级填洞
 - val565 结论：即使最优 filter+snap，仍打不过 CG
 
-### 4.3 frame_gate v2（提交）
+### 5.3 frame_gate v2（提交）
 
 ```text
 CG → ft PD-LTS → [always] snap1 + fill0.6 density
@@ -113,7 +284,7 @@ CG → ft PD-LTS → [always] snap1 + fill0.6 density
 
 ---
 
-## 5. 提交合规
+## 6. 提交合规
 
 | 项 | 状态 |
 |----|------|
@@ -133,7 +304,7 @@ bash src/run.sh         # 2155 帧
 
 ---
 
-## 6. 数据文件说明
+## 7. 数据文件说明
 
 | 文件 | 内容 |
 |------|------|
@@ -144,10 +315,13 @@ bash src/run.sh         # 2155 帧
 | `metrics/05_fusion_finetune_pdlts_best_val565.csv` | frame_gate v2；564 逐帧 |
 | `val565_five_models.xlsx` | sheet1 汇总 + sheet2 CG + sheet3–7 各主线 |
 | `config/submission_gate.json` | 提交 preset 完整 JSON |
+| `figures/compare3_*_{cols,lr}_*.png` | CG + sheet3/4/7 三模型 + HE（上全下局部 **或** 左全右局部） |
+| `figures/compare5_*.png` | （旧）五模型七列对比 |
+| [HYPERPARAMETERS.md](HYPERPARAMETERS.md) | 各模型 epoch / batch / refine 数值 |
 
 ---
 
-## 7. 汇报提示
+## 8. 汇报提示
 
 - **两套指标不可混用**：早期 SuperPC gate 用 `evaluate_uvg` cd_l1（~75 mm）；本文全部 gc_baseline（~17 mm / ~15 mm ft 线）
 - **vh_snap0** 为 val 最优 ablation（VH snap=0），正式提交采用 **全局统一** gate
